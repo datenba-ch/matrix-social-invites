@@ -12,6 +12,7 @@ const API_BASE = '/api/invites';
 export function useInviteCode() {
   const [inviteCode, setInviteCode] = useState<InviteCode | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [initialInviteLoaded, setInitialInviteLoaded] = useState(false);
 
   const fetchCurrentInvite = useCallback(async () => {
     const response = await fetch(`${API_BASE}/current`, {
@@ -42,6 +43,11 @@ export function useInviteCode() {
       .catch(() => {
         if (isMounted) {
           setInviteCode(null);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setInitialInviteLoaded(true);
         }
       });
 
@@ -121,5 +127,6 @@ export function useInviteCode() {
     getTimeRemaining,
     getProgress,
     hasActiveCode: !!inviteCode && inviteCode.expiresAt > Date.now(),
+    initialInviteLoaded,
   };
 }

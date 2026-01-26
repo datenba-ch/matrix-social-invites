@@ -159,6 +159,21 @@
   }
 }
 
+/* Day/Night cycle overlays */
+.day-night-tint {
+  mix-blend-mode: multiply;
+  will-change: background-color;
+}
+
+.day-night-glow {
+  mix-blend-mode: screen;
+  will-change: background;
+}
+
+.day-night-firefly {
+  will-change: opacity, filter;
+}
+
 @keyframes countdown-colon {
   0%,
   49% {

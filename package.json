@@ -11,6 +11,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "node dist-server/index.js",
+    "deploy:app:build": "docker build -t rg.fr-par.scw.cloud/datenbach/invites:latest -f Dockerfile . --platform=linux/amd64 && docker push rg.fr-par.scw.cloud/datenbach/invites:latest",
+    "deploy:app:restart": "scw container container deploy 63599a6d-934c-426e-91c6-2b71659ede6c",
+    "deploy:app": "npm run deploy:app:build && npm run deploy:app:restart",
+    "deploy": "npm run deploy:app",
     "test": "vitest run",
     "test:watch": "vitest"
   },
