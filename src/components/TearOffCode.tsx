@@ -91,7 +91,7 @@ export const TearOffCode: React.FC<TearOffCodeProps> = ({
       {/* Code tabs container */}
       <div 
         ref={containerRef}
-        className="flex justify-center gap-1 cursor-pointer group select-none"
+        className="flex justify-center gap-1.5 cursor-pointer group select-none"
         onClick={onClick}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -112,7 +112,7 @@ export const TearOffCode: React.FC<TearOffCodeProps> = ({
           <div
             key={index}
             className={cn(
-              "w-10 h-14 bg-[hsl(45,100%,95%)] flex items-center justify-center",
+              "flex-1 max-w-14 aspect-[3/4] bg-[hsl(45,100%,95%)] flex items-center justify-center",
               "border-2 border-border pixel-shadow",
               "transition-transform duration-150",
               !isSwiping && "group-hover:translate-y-1",
@@ -123,7 +123,7 @@ export const TearOffCode: React.FC<TearOffCodeProps> = ({
               imageRendering: 'pixelated',
             }}
           >
-            <span className="font-pixel text-lg text-pixel-green-dark">
+            <span className="font-pixel text-xl sm:text-2xl text-pixel-green-dark">
               {char}
             </span>
           </div>
