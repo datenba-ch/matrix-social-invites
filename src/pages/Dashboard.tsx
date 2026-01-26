@@ -118,7 +118,7 @@ const Dashboard: React.FC = () => {
             {user?.displayName}
           </p>
         </div>
-        <PixelButton variant="ghost" size="sm" onClick={logout}>
+        <PixelButton variant="secondary" size="sm" onClick={logout}>
           ABMELDEN
         </PixelButton>
       </header>
@@ -132,60 +132,67 @@ const Dashboard: React.FC = () => {
 
         {/* Bulletin board fills remaining space */}
         <BulletinBoard className="flex-1 max-w-sm">
-          <div className="text-center">
-            <h2 className="font-pixel text-[10px] text-foreground mb-4">
-              EINLADUNGSCODE
-            </h2>
+          <div className="flex flex-col h-full">
+            {/* Top section - title and countdown */}
+            <div className="text-center">
+              <h2 className="font-pixel text-[10px] text-foreground mb-4">
+                EINLADUNGSCODE
+              </h2>
 
-            {hasActiveCode && inviteCode ? (
-              <>
-                {/* Countdown wheel */}
-                <div className="flex justify-center mb-4">
+              {hasActiveCode && inviteCode && (
+                <div className="flex justify-center">
                   <CountdownWheel
                     progress={progress}
                     daysRemaining={timeRemaining?.days ?? 0}
                     hoursRemaining={timeRemaining?.hours ?? 0}
                   />
                 </div>
+              )}
+            </div>
 
-                {/* Tear-off code display with swipe support */}
-                <TearOffCode
-                  code={inviteCode.code}
-                  onClick={handleShowQR}
-                  onSwipeLeft={handleSwipeRegenerate}
-                />
+            {/* Bottom section - code and button pinned to bottom */}
+            <div className="mt-auto text-center">
+              {hasActiveCode && inviteCode ? (
+                <>
+                  {/* Tear-off code display with swipe support */}
+                  <TearOffCode
+                    code={inviteCode.code}
+                    onClick={handleShowQR}
+                    onSwipeLeft={handleSwipeRegenerate}
+                  />
 
-                {/* Regenerate button */}
-                <div className="mt-6">
+                  {/* Regenerate button */}
+                  <div className="mt-6">
+                    <PixelButton
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setShowRegenerateDialog(true)}
+                      disabled={isGenerating}
+                    >
+                      NEUER CODE
+                    </PixelButton>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* No code state */}
+                  <p className="font-pixel text-[8px] text-muted-foreground mb-6">
+                    Kein aktiver Code
+                  </p>
+
+                  {/* Generate button */}
                   <PixelButton
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setShowRegenerateDialog(true)}
+                    variant="primary"
+                    size="lg"
+                    onClick={handleGenerateCode}
                     disabled={isGenerating}
+                    className="animate-pulse-glow"
                   >
-                    NEUER CODE
+                    {isGenerating ? 'ERSTELLE...' : 'CODE ERSTELLEN'}
                   </PixelButton>
-                </div>
-              </>
-            ) : (
-            <>
-              {/* No code state */}
-              <p className="font-pixel text-[8px] text-muted-foreground mb-6">
-                Kein aktiver Code
-              </p>
-
-              {/* Generate button */}
-              <PixelButton
-                variant="primary"
-                size="lg"
-                onClick={handleGenerateCode}
-                disabled={isGenerating}
-                className="animate-pulse-glow"
-              >
-                {isGenerating ? 'ERSTELLE...' : 'CODE ERSTELLEN'}
-              </PixelButton>
-            </>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </BulletinBoard>
       </main>

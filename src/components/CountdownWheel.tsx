@@ -54,7 +54,7 @@ export const CountdownWheel: React.FC<CountdownWheelProps> = ({
   };
 
   return (
-    <div className={cn("relative w-28 h-28", className)}>
+    <div className={cn("relative w-[70%] aspect-square mx-auto", className)}>
       <svg viewBox="0 0 100 100" className="w-full h-full">
         {/* Background segments */}
         {Array.from({ length: totalSegments }).map((_, index) => (
@@ -86,12 +86,12 @@ export const CountdownWheel: React.FC<CountdownWheelProps> = ({
       
       {/* Center text */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-pixel text-xl text-primary">{daysRemaining}</span>
-        <span className="font-pixel text-[8px] text-muted-foreground">
+        <span className="font-pixel text-2xl text-primary">{daysRemaining}</span>
+        <span className="font-pixel text-[10px] text-muted-foreground">
           {daysRemaining === 1 ? 'TAG' : 'TAGE'}
         </span>
         {daysRemaining === 0 && (
-          <span className="font-pixel text-sm text-primary mt-1">{hoursRemaining}h</span>
+          <span className="font-pixel text-base text-primary mt-1">{hoursRemaining}h</span>
         )}
       </div>
     </div>
