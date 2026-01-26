@@ -60,6 +60,19 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Environment variables
+
+Backend services require the following environment variables. Values shown below are examples.
+
+```sh
+MATRIX_AUTH_SECRET="replace-with-strong-secret"
+REDIS_URL="redis://localhost:6379"
+OIDC_CLIENT_ID="your-oidc-client-id"
+OIDC_CLIENT_SECRET="your-oidc-client-secret"
+OIDC_ISSUER_URL="https://issuer.example.com"
+OIDC_REDIRECT_URI="http://localhost:5173/auth/callback"
+```
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
