@@ -7,11 +7,11 @@ interface PixelCompanionProps {
   mood?: CompanionMood;
   message?: string;
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 // Pixel art fox rendered with CSS - lightweight, no heavy graphics
-const FoxSprite: React.FC<{ mood: CompanionMood; size: 'sm' | 'md' | 'lg' }> = ({ mood, size }) => {
+const FoxSprite: React.FC<{ mood: CompanionMood; size: 'sm' | 'md' | 'lg' | 'xl' }> = ({ mood, size }) => {
   const [idleFrame, setIdleFrame] = useState(0);
   
   // Idle animation - ear twitch and tail wag
@@ -25,9 +25,10 @@ const FoxSprite: React.FC<{ mood: CompanionMood; size: 'sm' | 'md' | 'lg' }> = (
   }, [mood]);
 
   const sizeClasses = {
-    sm: 'w-10 h-10',
-    md: 'w-16 h-16',
-    lg: 'w-24 h-24',
+    sm: 'w-12 h-12',
+    md: 'w-20 h-20',
+    lg: 'w-32 h-32',
+    xl: 'w-40 h-40',
   };
 
   const getEarOffset = () => {
@@ -173,12 +174,12 @@ const FoxSprite: React.FC<{ mood: CompanionMood; size: 'sm' | 'md' | 'lg' }> = (
 };
 
 const SpeechBubble: React.FC<{ message: string }> = ({ message }) => (
-  <div className="relative bg-card border-4 border-border p-3 pixel-shadow max-w-48">
-    <p className="font-pixel text-[8px] leading-relaxed text-card-foreground">
+  <div className="relative bg-card border-4 border-border p-4 pixel-shadow w-[75vw] max-w-md">
+    <p className="font-pixel text-[10px] leading-relaxed text-card-foreground text-center">
       {message}
     </p>
     {/* Bubble tail */}
-    <div className="absolute -bottom-2 left-4 w-4 h-4 bg-card border-b-4 border-r-4 border-border transform rotate-45 translate-y-1" />
+    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-5 h-5 bg-card border-b-4 border-r-4 border-border transform rotate-45 translate-y-1" />
   </div>
 );
 

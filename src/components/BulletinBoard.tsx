@@ -14,7 +14,7 @@ export const BulletinBoard: React.FC<BulletinBoardProps> = ({
     <div className={cn(
       "relative bg-card border-8 border-pixel-brown",
       "p-6 pixel-border-thick",
-      "max-w-sm w-full mx-auto",
+      "w-full mx-auto flex-1 flex flex-col",
       className
     )}>
       {/* Corner pins */}
