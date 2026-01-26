@@ -99,7 +99,7 @@ export const TearOffCode: React.FC<TearOffCodeProps> = ({
       </div>
 
       {/* Perforated edge */}
-      <div className="w-full h-2 tear-off-edge mb-1" />
+      <div className="w-full h-2 tear-off-edge mb-4" />
       
       {/* Code tabs container */}
       <div 
