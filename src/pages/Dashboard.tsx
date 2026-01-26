@@ -21,6 +21,8 @@ import {
 
 type CompanionMood = 'idle' | 'happy' | 'excited' | 'sleeping' | 'waving' | 'thinking' | 'celebrating' | 'curious' | 'surprised';
 
+const MOOD_CYCLE: CompanionMood[] = ['happy', 'excited', 'waving', 'celebrating', 'curious', 'surprised', 'thinking', 'sleeping'];
+
 const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const {
@@ -39,6 +41,8 @@ const Dashboard: React.FC = () => {
   const [companionMessage, setCompanionMessage] = useState('');
   const [timeRemaining, setTimeRemaining] = useState(getTimeRemaining());
   const [justGenerated, setJustGenerated] = useState(false);
+  const [moodCycleIndex, setMoodCycleIndex] = useState(-1);
+  const [isManualMood, setIsManualMood] = useState(false);
 
   // Update time remaining every minute
   useEffect(() => {
@@ -48,8 +52,10 @@ const Dashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [getTimeRemaining]);
 
-  // Update companion based on state
+  // Update companion based on state (only if not in manual mood mode)
   useEffect(() => {
+    if (isManualMood) return;
+    
     if (isGenerating) {
       setCompanionMood('excited');
       setCompanionMessage('Erstelle deinen Code...');
@@ -74,7 +80,21 @@ const Dashboard: React.FC = () => {
       setCompanionMood('idle');
       setCompanionMessage('Erstelle einen neuen Einladungscode!');
     }
-  }, [isGenerating, hasActiveCode, getTimeRemaining, justGenerated]);
+  }, [isGenerating, hasActiveCode, getTimeRemaining, justGenerated, isManualMood]);
+
+  // Handle companion touch - cycle through moods
+  const handleCompanionTouch = () => {
+    const nextIndex = (moodCycleIndex + 1) % MOOD_CYCLE.length;
+    setMoodCycleIndex(nextIndex);
+    setIsManualMood(true);
+    setCompanionMood(MOOD_CYCLE[nextIndex]);
+    setCompanionMessage('');
+    
+    // Return to automatic mood after 3 seconds
+    setTimeout(() => {
+      setIsManualMood(false);
+    }, 3000);
+  };
 
   const handleGenerateCode = async () => {
     await generateInviteCode();
@@ -125,8 +145,8 @@ const Dashboard: React.FC = () => {
 
       {/* Main content - restructured layout */}
       <main className="relative z-10 flex-1 flex flex-col">
-        {/* Companion in top third */}
-        <div className="flex-none pt-2 pb-4 flex flex-col items-center">
+        {/* Companion in top third - touchable */}
+        <div className="flex-none pt-2 pb-4 flex flex-col items-center cursor-pointer" onClick={handleCompanionTouch}>
           <PixelCompanion mood={companionMood} message={companionMessage} size="xl" />
         </div>
 
