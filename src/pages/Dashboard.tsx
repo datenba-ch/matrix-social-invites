@@ -103,7 +103,7 @@ const Dashboard: React.FC = () => {
     setCompanionMessage('Dein Code ist bereit zum Teilen!');
   };
 
-  const progress = getProgress();
+  const progress = 0.55; // Demo: 55% elapsed
 
   return (
     <div className="min-h-screen bg-background flex flex-col p-4 relative overflow-hidden">
