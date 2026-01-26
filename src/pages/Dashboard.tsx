@@ -221,7 +221,7 @@ const Dashboard: React.FC = () => {
               Dies ersetzt deinen aktuellen Code. Der alte Code funktioniert dann nicht mehr.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-row justify-center gap-3 mt-4 sm:justify-center">
+          <AlertDialogFooter className="flex flex-col gap-3 mt-4 sm:flex-row sm:justify-center">
             <AlertDialogCancel asChild>
               <PixelButton variant="ghost" size="sm">
                 ABBRECHEN
