@@ -77,6 +77,40 @@ OIDC_REDIRECT_URI="http://localhost:5173/auth/callback"
 
 Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
 
+## Docker deployment
+
+This project now ships with a backend server that serves the built Vite frontend and exposes `/api/*` routes. Build and run the container like this:
+
+```sh
+docker build -t forest-friend-invites .
+
+docker run --rm -p 3000:3000 \
+  -e PORT=3000 \
+  -e REDIS_URL=redis://redis:6379 \
+  -e OIDC_ISSUER_URL=https://issuer.example.com \
+  -e OIDC_CLIENT_ID=your-client-id \
+  -e OIDC_CLIENT_SECRET=your-client-secret \
+  -e OIDC_REDIRECT_URI=https://your-app.example.com/callback \
+  -e MATRIX_HOMESERVER_URL=https://matrix.example.com \
+  -e MATRIX_ACCESS_TOKEN=your-matrix-token \
+  -e MATRIX_USER_ID=@bot:example.com \
+  forest-friend-invites
+```
+
+### Environment variables
+
+| Variable | Description |
+| --- | --- |
+| `PORT` | Port that the backend server listens on (default: `3000`). |
+| `REDIS_URL` | Redis connection string for backend caching/state (optional). |
+| `OIDC_ISSUER_URL` | OIDC issuer base URL. |
+| `OIDC_CLIENT_ID` | OIDC client ID. |
+| `OIDC_CLIENT_SECRET` | OIDC client secret. |
+| `OIDC_REDIRECT_URI` | OIDC redirect URI. |
+| `MATRIX_HOMESERVER_URL` | Matrix homeserver URL. |
+| `MATRIX_ACCESS_TOKEN` | Matrix access token for the bot/user. |
+| `MATRIX_USER_ID` | Matrix user ID (e.g. `@bot:example.com`). |
+
 ## Can I connect a custom domain to my Lovable project?
 
 Yes, you can!
