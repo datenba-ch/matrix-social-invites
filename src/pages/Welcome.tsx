@@ -2,22 +2,15 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import PixelCompanion from '@/components/PixelCompanion';
 import PixelButton from '@/components/PixelButton';
+import ForestBackground from '@/components/ForestBackground';
 
 const Welcome: React.FC = () => {
   const { login, isLoading } = useAuth();
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-      {/* Forest background pattern */}
-      <div className="fixed inset-0 pointer-events-none opacity-20"
-        style={{
-          backgroundImage: `
-            radial-gradient(circle at 20% 80%, hsl(var(--pixel-green-light)) 0%, transparent 30%),
-            radial-gradient(circle at 80% 20%, hsl(var(--pixel-green-light)) 0%, transparent 25%),
-            radial-gradient(circle at 50% 50%, hsl(var(--pixel-green-light)) 0%, transparent 40%)
-          `
-        }}
-      />
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      {/* Animated forest background */}
+      <ForestBackground showFireflies={true} showTrees={true} />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center text-center">
@@ -33,6 +26,7 @@ const Welcome: React.FC = () => {
         <PixelCompanion 
           mood={isLoading ? 'excited' : 'happy'}
           message={isLoading ? "Logging in..." : "Welcome to the forest! Ready to create invite codes?"}
+          size="lg"
         />
 
         {/* Sign in button */}
@@ -52,23 +46,6 @@ const Welcome: React.FC = () => {
           Sign in with your Matrix account to create invite codes for friends
         </p>
       </div>
-
-      {/* Decorative trees */}
-      <div className="fixed bottom-0 left-0 right-0 h-24 pointer-events-none"
-        style={{
-          backgroundImage: `
-            repeating-linear-gradient(
-              90deg,
-              transparent,
-              transparent 40px,
-              hsl(var(--pixel-green-light) / 0.3) 40px,
-              hsl(var(--pixel-green-light) / 0.3) 60px,
-              transparent 60px,
-              transparent 100px
-            )
-          `
-        }}
-      />
     </div>
   );
 };
