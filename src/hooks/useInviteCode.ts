@@ -87,10 +87,11 @@ export function useInviteCode() {
   // Calculate progress (0-1)
   const getProgress = useCallback(() => {
     if (!inviteCode) return 0;
-    
+
     const totalDuration = EXPIRATION_DAYS * 24 * 60 * 60 * 1000;
-    const elapsed = Date.now() - inviteCode.createdAt;
-    
+    const remaining = inviteCode.expiresAt - Date.now();
+    const elapsed = totalDuration - remaining;
+
     return Math.min(1, Math.max(0, elapsed / totalDuration));
   }, [inviteCode]);
 
