@@ -110,7 +110,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col p-4 relative overflow-hidden">
       {/* Animated forest background */}
-      <ForestBackground showFireflies={true} showTrees={false} />
+      <ForestBackground showFireflies={true} />
 
       {/* Header */}
       <header className="relative z-10 flex items-center justify-between mb-6">
