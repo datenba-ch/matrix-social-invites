@@ -82,13 +82,12 @@ const Dashboard: React.FC = () => {
     }
   }, [isGenerating, hasActiveCode, getTimeRemaining, justGenerated, isManualMood]);
 
-  // Handle companion touch - cycle through moods
+  // Handle companion touch - cycle through moods (keep message visible)
   const handleCompanionTouch = () => {
     const nextIndex = (moodCycleIndex + 1) % MOOD_CYCLE.length;
     setMoodCycleIndex(nextIndex);
     setIsManualMood(true);
     setCompanionMood(MOOD_CYCLE[nextIndex]);
-    setCompanionMessage('');
     
     // Return to automatic mood after 3 seconds
     setTimeout(() => {
