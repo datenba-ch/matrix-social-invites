@@ -212,7 +212,8 @@ const Dashboard: React.FC = () => {
         <AlertDialogContent className="bg-card border-4 border-border fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-[280px] sm:max-w-lg p-4 sm:p-6">
           <AlertDialogHeader className="flex flex-col items-center space-y-3 sm:space-y-4">
             <div className="flex justify-center">
-              <PixelCompanion mood="surprised" message="Bist du sicher?" size="sm" />
+              <PixelCompanion mood="surprised" size="sm" className="hidden sm:flex" message="Bist du sicher?" />
+              <PixelCompanion mood="surprised" size="sm" className="flex sm:hidden" />
             </div>
             <AlertDialogTitle className="font-pixel text-[10px] text-center">
               CODE NEU ERSTELLEN?
@@ -221,14 +222,14 @@ const Dashboard: React.FC = () => {
               Dies ersetzt deinen aktuellen Code. Der alte Code funktioniert dann nicht mehr.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-col items-center gap-2 mt-3 sm:flex-row sm:justify-center sm:gap-3 sm:mt-4">
+          <AlertDialogFooter className="flex flex-col items-stretch gap-2 mt-3 sm:flex-row sm:items-center sm:justify-center sm:gap-3 sm:mt-4">
             <AlertDialogAction asChild>
-              <PixelButton variant="primary" size="sm" onClick={handleRegenerateCode} className="w-full sm:w-auto">
+              <PixelButton variant="primary" size="sm" onClick={handleRegenerateCode} className="w-full sm:w-auto justify-center">
                 NEU ERSTELLEN
               </PixelButton>
             </AlertDialogAction>
             <AlertDialogCancel asChild>
-              <PixelButton variant="ghost" size="sm" className="w-full sm:w-auto">
+              <PixelButton variant="ghost" size="sm" className="w-full sm:w-auto justify-center">
                 ABBRECHEN
               </PixelButton>
             </AlertDialogCancel>
