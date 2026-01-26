@@ -52,27 +52,27 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (isGenerating) {
       setCompanionMood('excited');
-      setCompanionMessage('Creating your code...');
+      setCompanionMessage('Erstelle deinen Code...');
     } else if (justGenerated) {
       setCompanionMood('celebrating');
-      setCompanionMessage('Your new code is ready!');
+      setCompanionMessage('Dein neuer Code ist bereit!');
       const timer = setTimeout(() => setJustGenerated(false), 3000);
       return () => clearTimeout(timer);
     } else if (hasActiveCode) {
       const remaining = getTimeRemaining();
       if (remaining && remaining.days <= 1) {
         setCompanionMood('curious');
-        setCompanionMessage('Your code expires soon!');
+        setCompanionMessage('Dein Code läuft bald ab!');
       } else if (remaining && remaining.days <= 3) {
         setCompanionMood('thinking');
-        setCompanionMessage('A few days left on this code.');
+        setCompanionMessage('Noch ein paar Tage für diesen Code.');
       } else {
         setCompanionMood('happy');
-        setCompanionMessage('Your code is ready to share!');
+        setCompanionMessage('Dein Code ist bereit zum Teilen!');
       }
     } else {
       setCompanionMood('idle');
-      setCompanionMessage('Generate a new invite code!');
+      setCompanionMessage('Erstelle einen neuen Einladungscode!');
     }
   }, [isGenerating, hasActiveCode, getTimeRemaining, justGenerated]);
 
@@ -93,14 +93,14 @@ const Dashboard: React.FC = () => {
 
   const handleShowQR = () => {
     setCompanionMood('waving');
-    setCompanionMessage('Show this to your friend!');
+    setCompanionMessage('Zeig das deinem Freund!');
     setShowQR(true);
   };
 
   const handleCloseQR = () => {
     setShowQR(false);
     setCompanionMood('happy');
-    setCompanionMessage('Your code is ready to share!');
+    setCompanionMessage('Dein Code ist bereit zum Teilen!');
   };
 
   const progress = getProgress();
@@ -108,7 +108,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col p-4 relative overflow-hidden">
       {/* Animated forest background */}
-      <ForestBackground showFireflies={true} showTrees={false} />
+      <ForestBackground showFireflies={true} showTrees={true} />
 
       {/* Header */}
       <header className="relative z-10 flex items-center justify-between mb-6">
@@ -119,7 +119,7 @@ const Dashboard: React.FC = () => {
           </p>
         </div>
         <PixelButton variant="ghost" size="sm" onClick={logout}>
-          LOGOUT
+          ABMELDEN
         </PixelButton>
       </header>
 
@@ -134,7 +134,7 @@ const Dashboard: React.FC = () => {
         <BulletinBoard className="mb-6">
           <div className="text-center">
             <h2 className="font-pixel text-[10px] text-foreground mb-4">
-              INVITE CODE
+              EINLADUNGSCODE
             </h2>
 
             {hasActiveCode && inviteCode ? (
@@ -163,28 +163,28 @@ const Dashboard: React.FC = () => {
                     onClick={() => setShowRegenerateDialog(true)}
                     disabled={isGenerating}
                   >
-                    NEW CODE
+                    NEUER CODE
                   </PixelButton>
                 </div>
               </>
             ) : (
-              <>
-                {/* No code state */}
-                <p className="font-pixel text-[8px] text-muted-foreground mb-6">
-                  No active code
-                </p>
+            <>
+              {/* No code state */}
+              <p className="font-pixel text-[8px] text-muted-foreground mb-6">
+                Kein aktiver Code
+              </p>
 
-                {/* Generate button */}
-                <PixelButton
-                  variant="primary"
-                  size="lg"
-                  onClick={handleGenerateCode}
-                  disabled={isGenerating}
-                  className="animate-pulse-glow"
-                >
-                  {isGenerating ? 'CREATING...' : 'GENERATE CODE'}
-                </PixelButton>
-              </>
+              {/* Generate button */}
+              <PixelButton
+                variant="primary"
+                size="lg"
+                onClick={handleGenerateCode}
+                disabled={isGenerating}
+                className="animate-pulse-glow"
+              >
+                {isGenerating ? 'ERSTELLE...' : 'CODE ERSTELLEN'}
+              </PixelButton>
+            </>
             )}
           </div>
         </BulletinBoard>
@@ -201,27 +201,27 @@ const Dashboard: React.FC = () => {
 
       {/* Regenerate confirmation dialog - fixed for small viewports */}
       <AlertDialog open={showRegenerateDialog} onOpenChange={setShowRegenerateDialog}>
-        <AlertDialogContent className="bg-card border-4 border-border max-w-[calc(100vw-2rem)] w-full sm:max-w-xs mx-4">
-          <AlertDialogHeader className="space-y-4">
+        <AlertDialogContent className="bg-card border-4 border-border fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-xs p-6">
+          <AlertDialogHeader className="flex flex-col items-center space-y-4">
             <div className="flex justify-center">
-              <PixelCompanion mood="surprised" message="Are you sure?" size="sm" />
+              <PixelCompanion mood="surprised" message="Bist du sicher?" size="sm" />
             </div>
             <AlertDialogTitle className="font-pixel text-[10px] text-center">
-              REGENERATE CODE?
+              CODE NEU ERSTELLEN?
             </AlertDialogTitle>
             <AlertDialogDescription className="font-pixel text-[8px] text-center text-muted-foreground leading-relaxed">
-              This will replace your current code. The old code will stop working.
+              Dies ersetzt deinen aktuellen Code. Der alte Code funktioniert dann nicht mehr.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-row justify-center gap-2 sm:gap-4 mt-4">
+          <AlertDialogFooter className="flex flex-row justify-center gap-3 mt-4 sm:justify-center">
             <AlertDialogCancel asChild>
               <PixelButton variant="ghost" size="sm">
-                CANCEL
+                ABBRECHEN
               </PixelButton>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
               <PixelButton variant="primary" size="sm" onClick={handleRegenerateCode}>
-                REGENERATE
+                NEU ERSTELLEN
               </PixelButton>
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -119,7 +119,7 @@ export const ForestBackground: React.FC<ForestBackgroundProps> = ({
 
       {/* Trees layer */}
       {showTrees && (
-        <div className="absolute inset-x-0 bottom-0 h-32 opacity-40">
+        <div className="absolute inset-x-0 bottom-0 h-32 opacity-20">
           {trees.map(tree => (
             <PixelTree key={tree.id} tree={tree} />
           ))}

@@ -81,7 +81,7 @@ export const TearOffCode: React.FC<TearOffCodeProps> = ({
         style={{ opacity: swipeProgress }}
       >
         <span className="font-pixel text-[8px] text-destructive">
-          ← REGENERATE
+          ← NEU ERSTELLEN
         </span>
       </div>
 
@@ -132,7 +132,7 @@ export const TearOffCode: React.FC<TearOffCodeProps> = ({
       
       {/* Hint text */}
       <p className="text-center mt-3 font-pixel text-[8px] text-muted-foreground">
-        TAP TO SHOW QR • SWIPE LEFT TO REGENERATE
+        TIPPEN FÜR QR • NACH LINKS WISCHEN ZUM ERNEUERN
       </p>
     </div>
   );
