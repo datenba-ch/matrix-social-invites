@@ -6,59 +6,72 @@ interface InviteCode {
   expiresAt: number;
 }
 
-const STORAGE_KEY = 'datenbach_invite_code';
 const EXPIRATION_DAYS = 7;
-const CODE_LENGTH = 6;
-const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed confusing chars (I, O, 0, 1)
-
-function generateCode(): string {
-  let code = '';
-  for (let i = 0; i < CODE_LENGTH; i++) {
-    code += CODE_CHARS.charAt(Math.floor(Math.random() * CODE_CHARS.length));
-  }
-  return code;
-}
+const API_BASE = '/api/invites';
 
 export function useInviteCode() {
   const [inviteCode, setInviteCode] = useState<InviteCode | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Load code from storage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as InviteCode;
-        // Check if code is still valid
-        if (parsed.expiresAt > Date.now()) {
-          setInviteCode(parsed);
-        } else {
-          localStorage.removeItem(STORAGE_KEY);
-        }
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-      }
+  const fetchCurrentInvite = useCallback(async () => {
+    const response = await fetch(`${API_BASE}/current`, {
+      credentials: 'include',
+    });
+
+    if (response.status === 404) {
+      return null;
     }
+
+    if (!response.ok) {
+      throw new Error('Failed to load invite code.');
+    }
+
+    return (await response.json()) as InviteCode;
   }, []);
+
+  // Load code from API on mount
+  useEffect(() => {
+    let isMounted = true;
+
+    fetchCurrentInvite()
+      .then((data) => {
+        if (isMounted) {
+          setInviteCode(data);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setInviteCode(null);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchCurrentInvite]);
 
   const generateInviteCode = useCallback(async () => {
     setIsGenerating(true);
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const now = Date.now();
-    const newCode: InviteCode = {
-      code: generateCode(),
-      createdAt: now,
-      expiresAt: now + (EXPIRATION_DAYS * 24 * 60 * 60 * 1000),
-    };
-    
-    setInviteCode(newCode);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newCode));
-    setIsGenerating(false);
-    
-    return newCode;
+
+    try {
+      const response = await fetch(API_BASE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create invite code.');
+      }
+
+      const newCode = (await response.json()) as InviteCode;
+      setInviteCode(newCode);
+      return newCode;
+    } finally {
+      setIsGenerating(false);
+    }
   }, []);
 
   const regenerateCode = useCallback(async () => {
@@ -67,7 +80,11 @@ export function useInviteCode() {
 
   const clearCode = useCallback(() => {
     setInviteCode(null);
-    localStorage.removeItem(STORAGE_KEY);
+
+    void fetch(`${API_BASE}/current`, {
+      method: 'DELETE',
+      credentials: 'include',
+    }).catch(() => {});
   }, []);
 
   // Calculate time remaining
