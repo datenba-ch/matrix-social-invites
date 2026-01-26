@@ -5,6 +5,7 @@ interface CountdownWheelProps {
   progress: number; // 0-1, where 0 is fresh and 1 is expired
   daysRemaining: number;
   hoursRemaining: number;
+  minutesRemaining?: number;
   className?: string;
 }
 
@@ -12,9 +13,11 @@ export const CountdownWheel: React.FC<CountdownWheelProps> = ({
   progress,
   daysRemaining,
   hoursRemaining,
+  minutesRemaining = 0,
   className,
 }) => {
   const [displayProgress, setDisplayProgress] = useState(0);
+  const [liveTime, setLiveTime] = useState({ days: daysRemaining, hours: hoursRemaining, minutes: minutesRemaining });
 
   useEffect(() => {
     // Animate progress on mount
@@ -24,17 +27,68 @@ export const CountdownWheel: React.FC<CountdownWheelProps> = ({
     return () => clearTimeout(timer);
   }, [progress]);
 
-  // Generate notched segments (7 days = 7 segments)
-  const totalSegments = 7;
+  // Live countdown timer
+  useEffect(() => {
+    setLiveTime({ days: daysRemaining, hours: hoursRemaining, minutes: minutesRemaining });
+    
+    const interval = setInterval(() => {
+      setLiveTime(prev => {
+        let { days, hours, minutes } = prev;
+        
+        if (minutes > 0) {
+          minutes--;
+        } else if (hours > 0) {
+          hours--;
+          minutes = 59;
+        } else if (days > 0) {
+          days--;
+          hours = 23;
+          minutes = 59;
+        }
+        
+        return { days, hours, minutes };
+      });
+    }, 60000); // Update every minute
+    
+    return () => clearInterval(interval);
+  }, [daysRemaining, hoursRemaining, minutesRemaining]);
+
+  // Generate notched segments (14 segments = 7 days × 2 half-days)
+  const totalSegments = 14;
   const radius = 42;
   const strokeWidth = 8;
   const circumference = 2 * Math.PI * radius;
   const segmentLength = circumference / totalSegments;
-  const gapLength = 12; // Gap between segments in pixels
+  const gapLength = 8; // Smaller gaps for more segments
   const arcLength = segmentLength - gapLength;
   
   // Calculate how many segments should be filled (counting from segment 0)
   const filledSegments = Math.ceil((1 - displayProgress) * totalSegments);
+
+  // Format time display
+  const formatTime = () => {
+    if (liveTime.days > 0) {
+      return (
+        <>
+          <span className="font-pixel text-2xl text-primary">{liveTime.days}</span>
+          <span className="font-pixel text-[10px] text-muted-foreground">
+            {liveTime.days === 1 ? 'TAG' : 'TAGE'}
+          </span>
+          <span className="font-pixel text-xs text-primary/70 mt-0.5">
+            {String(liveTime.hours).padStart(2, '0')}:{String(liveTime.minutes).padStart(2, '0')}
+          </span>
+        </>
+      );
+    }
+    return (
+      <>
+        <span className="font-pixel text-xl text-primary">
+          {String(liveTime.hours).padStart(2, '0')}:{String(liveTime.minutes).padStart(2, '0')}
+        </span>
+        <span className="font-pixel text-[10px] text-muted-foreground">STUNDEN</span>
+      </>
+    );
+  };
 
   return (
     <div className={cn("relative w-[70%] aspect-square mx-auto", className)}>
@@ -85,15 +139,9 @@ export const CountdownWheel: React.FC<CountdownWheelProps> = ({
         })}
       </svg>
       
-      {/* Center text */}
+      {/* Center text - live countdown */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-pixel text-2xl text-primary">{daysRemaining}</span>
-        <span className="font-pixel text-[10px] text-muted-foreground">
-          {daysRemaining === 1 ? 'TAG' : 'TAGE'}
-        </span>
-        {daysRemaining === 0 && (
-          <span className="font-pixel text-base text-primary mt-1">{hoursRemaining}h</span>
-        )}
+        {formatTime()}
       </div>
     </div>
   );
