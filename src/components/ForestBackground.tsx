@@ -5,6 +5,7 @@ import forestWallpaper from '@/assets/forest-wallpaper.png';
 interface ForestBackgroundProps {
   className?: string;
   showFireflies?: boolean;
+  interactionPoint?: { x: number; y: number };
 }
 
 interface Firefly {
@@ -32,9 +33,12 @@ const Firefly: React.FC<{ firefly: Firefly }> = ({ firefly }) => (
   />
 );
 
+const clampValue = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
 export const ForestBackground: React.FC<ForestBackgroundProps> = ({
   className,
   showFireflies = true,
+  interactionPoint,
 }) => {
   const [fireflies, setFireflies] = useState<Firefly[]>([]);
 
@@ -52,6 +56,46 @@ export const ForestBackground: React.FC<ForestBackgroundProps> = ({
       setFireflies(newFireflies);
     }
   }, [showFireflies]);
+
+  useEffect(() => {
+    if (!showFireflies) {
+      return;
+    }
+
+    let frameId: number;
+
+    const animate = () => {
+      setFireflies((prev) => {
+        if (prev.length === 0) {
+          return prev;
+        }
+
+        return prev.map((firefly) => {
+          const next = { ...firefly };
+
+          if (interactionPoint) {
+            const dx = interactionPoint.x - next.x;
+            const dy = interactionPoint.y - next.y;
+            next.x = clampValue(next.x + dx * 0.04 + (Math.random() - 0.5) * 0.08, 0, 100);
+            next.y = clampValue(next.y + dy * 0.03 + (Math.random() - 0.5) * 0.08, 5, 95);
+          } else {
+            next.x = clampValue(next.x + (Math.random() - 0.5) * 0.3, 0, 100);
+            next.y = clampValue(next.y + (Math.random() - 0.5) * 0.3, 5, 95);
+          }
+
+          return next;
+        });
+      });
+
+      frameId = window.requestAnimationFrame(animate);
+    };
+
+    frameId = window.requestAnimationFrame(animate);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [interactionPoint, showFireflies]);
 
   return (
     <div className={cn("fixed inset-0 pointer-events-none overflow-hidden", className)}>

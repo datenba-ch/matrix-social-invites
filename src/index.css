@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -157,5 +159,18 @@
   }
 }
 
-/* Pixel font import */
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@keyframes countdown-colon {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.countdown-colon {
+  animation: countdown-colon 1s steps(2, start) infinite;
+  color: inherit;
+}
