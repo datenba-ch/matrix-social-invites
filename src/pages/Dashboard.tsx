@@ -132,7 +132,7 @@ const Dashboard: React.FC = () => {
 
         {/* Bulletin board fills remaining space */}
         <BulletinBoard className="flex-1 max-w-sm">
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col flex-1">
             {/* Top section - title and countdown */}
             <div className="text-center">
               <h2 className="font-pixel text-[10px] text-foreground mb-4">
