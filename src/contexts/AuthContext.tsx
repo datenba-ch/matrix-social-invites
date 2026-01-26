@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 interface User {
   id: string;
@@ -11,61 +11,92 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: () => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'datenbach_user';
+const fetchJson = async <T,>(input: RequestInfo | URL, init?: RequestInit): Promise<T> => {
+  const response = await fetch(input, {
+    ...init,
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(init?.headers ?? {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Request failed');
+  }
+
+  return (await response.json()) as T;
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load user from storage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
+    let isMounted = true;
+
+    const loadUser = async () => {
       try {
-        setUser(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
+        const data = await fetchJson<{ user: User | null }>('/api/me');
+        if (isMounted) {
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error('Failed to load session', error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-    }
-    setIsLoading(false);
+    };
+
+    loadUser();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const login = useCallback(async () => {
     setIsLoading(true);
-    
-    // Simulate OIDC flow delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Mock user - ready for real Matrix OIDC integration
-    const mockUser: User = {
-      id: 'mock-user-123',
-      displayName: 'Forest Wanderer',
-      matrixId: '@wanderer:datenbach.de',
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mockUser));
-    setIsLoading(false);
+
+    try {
+      const data = await fetchJson<{ authorizationUrl: string }>('/api/auth/login', {
+        method: 'POST',
+      });
+      window.location.assign(data.authorizationUrl);
+    } catch (error) {
+      console.error('Login failed', error);
+      setIsLoading(false);
+    }
   }, []);
 
-  const logout = useCallback(() => {
-    setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
+  const logout = useCallback(async () => {
+    try {
+      await fetchJson('/api/auth/logout', { method: 'POST' });
+    } catch (error) {
+      console.error('Logout failed', error);
+    } finally {
+      setUser(null);
+    }
   }, []);
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      isAuthenticated: !!user,
-      isLoading,
-      login,
-      logout,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        isLoading,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
