@@ -209,7 +209,7 @@ const Dashboard: React.FC = () => {
 
       {/* Regenerate confirmation dialog - fixed for small viewports */}
       <AlertDialog open={showRegenerateDialog} onOpenChange={setShowRegenerateDialog}>
-        <AlertDialogContent className="bg-card border-4 border-border fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-xs sm:max-w-sm p-6">
+        <AlertDialogContent className="bg-card border-4 border-border fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-xs sm:max-w-md p-6">
           <AlertDialogHeader className="flex flex-col items-center space-y-4">
             <div className="flex justify-center">
               <PixelCompanion mood="surprised" message="Bist du sicher?" size="sm" />
