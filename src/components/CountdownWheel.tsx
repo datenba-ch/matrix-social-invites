@@ -69,19 +69,27 @@ export const CountdownWheel: React.FC<CountdownWheelProps> = ({
           />
         ))}
         
-        {/* Filled segments */}
-        {Array.from({ length: totalSegments }).map((_, index) => (
-          <path
-            key={`fill-${index}`}
-            d={createSegmentPath(index)}
-            fill="none"
-            stroke={index < filledSegments ? "hsl(var(--primary))" : "transparent"}
-            strokeWidth="10"
-            strokeLinecap="square"
-            className="transition-all duration-500 ease-out"
-            style={{ imageRendering: 'pixelated' }}
-          />
-        ))}
+        {/* Filled segments with depletion animation */}
+        {Array.from({ length: totalSegments }).map((_, index) => {
+          const isFilled = index < filledSegments;
+          return (
+            <path
+              key={`fill-${index}`}
+              d={createSegmentPath(index)}
+              fill="none"
+              stroke="hsl(var(--primary))"
+              strokeWidth={isFilled ? "10" : "6"}
+              strokeLinecap="square"
+              style={{ 
+                imageRendering: 'pixelated',
+                opacity: isFilled ? 1 : 0,
+                transform: isFilled ? 'scale(1)' : 'scale(0.8)',
+                transformOrigin: '50px 50px',
+                transition: 'opacity 0.5s ease-out, stroke-width 0.5s ease-out, transform 0.5s ease-out',
+              }}
+            />
+          );
+        })}
       </svg>
       
       {/* Center text */}
