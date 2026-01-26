@@ -32,7 +32,7 @@ export const QRCodeOverlay: React.FC<QRCodeOverlayProps> = ({
       <div className="absolute top-8 right-8">
         <PixelCompanion 
           mood="waving" 
-          message="Scan me!"
+          message="Scann mich!"
         />
       </div>
 
@@ -62,7 +62,7 @@ export const QRCodeOverlay: React.FC<QRCodeOverlayProps> = ({
 
       {/* Dismiss hint */}
       <p className="mt-8 font-pixel text-[8px] text-muted-foreground">
-        TAP ANYWHERE TO CLOSE
+        TIPPEN ZUM SCHLIESSEN
       </p>
     </div>
   );

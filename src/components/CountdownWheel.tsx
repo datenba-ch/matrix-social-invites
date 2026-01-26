@@ -60,7 +60,7 @@ export const CountdownWheel: React.FC<CountdownWheelProps> = ({
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="font-pixel text-lg text-primary">{daysRemaining}</span>
         <span className="font-pixel text-[8px] text-muted-foreground">
-          {daysRemaining === 1 ? 'DAY' : 'DAYS'}
+          {daysRemaining === 1 ? 'TAG' : 'TAGE'}
         </span>
         {daysRemaining === 0 && (
           <>

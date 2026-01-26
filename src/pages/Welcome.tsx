@@ -19,13 +19,13 @@ const Welcome: React.FC = () => {
           DATENBACH
         </h1>
         <p className="font-pixel text-[10px] text-muted-foreground mb-8">
-          INVITE CODE GENERATOR
+          EINLADUNGSCODE GENERATOR
         </p>
 
         {/* Companion greeting */}
         <PixelCompanion 
           mood={isLoading ? 'excited' : 'happy'}
-          message={isLoading ? "Logging in..." : "Welcome to the forest! Ready to create invite codes?"}
+          message={isLoading ? "Anmeldung..." : "Willkommen im Wald! Bereit Einladungscodes zu erstellen?"}
           size="lg"
         />
 
@@ -37,13 +37,13 @@ const Welcome: React.FC = () => {
             onClick={login}
             disabled={isLoading}
           >
-            {isLoading ? 'SIGNING IN...' : 'SIGN IN'}
+            {isLoading ? 'ANMELDEN...' : 'ANMELDEN'}
           </PixelButton>
         </div>
 
         {/* Footer hint */}
         <p className="mt-8 font-pixel text-[8px] text-muted-foreground max-w-48">
-          Sign in with your Matrix account to create invite codes for friends
+          Melde dich mit deinem Matrix-Konto an, um Einladungscodes für Freunde zu erstellen
         </p>
       </div>
     </div>
