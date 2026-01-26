@@ -26,66 +26,59 @@ export const CountdownWheel: React.FC<CountdownWheelProps> = ({
 
   // Generate notched segments (7 days = 7 segments)
   const totalSegments = 7;
-  const segmentAngle = 360 / totalSegments;
-  const gapAngle = 8; // Gap between segments in degrees
-  const segmentArcAngle = segmentAngle - gapAngle;
+  const radius = 42;
+  const strokeWidth = 8;
+  const circumference = 2 * Math.PI * radius;
+  const segmentLength = circumference / totalSegments;
+  const gapLength = 12; // Gap between segments in pixels
+  const arcLength = segmentLength - gapLength;
   
-  // Calculate how many segments should be filled
+  // Calculate how many segments should be filled (counting from segment 0)
   const filledSegments = Math.ceil((1 - displayProgress) * totalSegments);
-
-  const createSegmentPath = (index: number) => {
-    const startAngle = index * segmentAngle - 90; // Start from top
-    const endAngle = startAngle + segmentArcAngle;
-    const radius = 42;
-    const centerX = 50;
-    const centerY = 50;
-    
-    const startRad = (startAngle * Math.PI) / 180;
-    const endRad = (endAngle * Math.PI) / 180;
-    
-    const x1 = centerX + radius * Math.cos(startRad);
-    const y1 = centerY + radius * Math.sin(startRad);
-    const x2 = centerX + radius * Math.cos(endRad);
-    const y2 = centerY + radius * Math.sin(endRad);
-    
-    const largeArcFlag = segmentArcAngle > 180 ? 1 : 0;
-    
-    return `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`;
-  };
 
   return (
     <div className={cn("relative w-[70%] aspect-square mx-auto", className)}>
       <svg viewBox="0 0 100 100" className="w-full h-full">
-        {/* Background segments */}
-        {Array.from({ length: totalSegments }).map((_, index) => (
-          <path
-            key={`bg-${index}`}
-            d={createSegmentPath(index)}
-            fill="none"
-            stroke="hsl(var(--muted))"
-            strokeWidth="10"
-            strokeLinecap="square"
-            style={{ imageRendering: 'pixelated' }}
-          />
-        ))}
+        {/* Background track - all segments as muted */}
+        {Array.from({ length: totalSegments }).map((_, index) => {
+          const rotation = (index * 360) / totalSegments - 90;
+          return (
+            <circle
+              key={`bg-${index}`}
+              cx="50"
+              cy="50"
+              r={radius}
+              fill="none"
+              stroke="hsl(var(--muted))"
+              strokeWidth={strokeWidth}
+              strokeDasharray={`${arcLength} ${circumference - arcLength}`}
+              strokeDashoffset={0}
+              strokeLinecap="butt"
+              transform={`rotate(${rotation} 50 50)`}
+            />
+          );
+        })}
         
         {/* Filled segments with depletion animation */}
         {Array.from({ length: totalSegments }).map((_, index) => {
           const isFilled = index < filledSegments;
+          const rotation = (index * 360) / totalSegments - 90;
           return (
-            <path
+            <circle
               key={`fill-${index}`}
-              d={createSegmentPath(index)}
+              cx="50"
+              cy="50"
+              r={radius}
               fill="none"
               stroke="hsl(var(--primary))"
-              strokeWidth={isFilled ? "10" : "6"}
-              strokeLinecap="square"
+              strokeWidth={strokeWidth}
+              strokeDasharray={`${arcLength} ${circumference - arcLength}`}
+              strokeDashoffset={0}
+              strokeLinecap="butt"
+              transform={`rotate(${rotation} 50 50)`}
               style={{ 
-                imageRendering: 'pixelated',
                 opacity: isFilled ? 1 : 0,
-                transform: isFilled ? 'scale(1)' : 'scale(0.8)',
-                transformOrigin: '50px 50px',
-                transition: 'opacity 0.5s ease-out, stroke-width 0.5s ease-out, transform 0.5s ease-out',
+                transition: 'opacity 0.5s ease-out',
               }}
             />
           );
