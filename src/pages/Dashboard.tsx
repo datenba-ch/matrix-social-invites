@@ -141,10 +141,11 @@ const Dashboard: React.FC = () => {
 
               {hasActiveCode && inviteCode && (
                 <div className="flex justify-center">
-                  <CountdownWheel
+                <CountdownWheel
                     progress={progress}
                     daysRemaining={timeRemaining?.days ?? 0}
                     hoursRemaining={timeRemaining?.hours ?? 0}
+                    minutesRemaining={timeRemaining?.minutes ?? 0}
                   />
                 </div>
               )}
