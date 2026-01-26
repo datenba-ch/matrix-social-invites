@@ -110,6 +110,36 @@ const Dashboard: React.FC = () => {
     setShowRegenerateDialog(true);
   };
 
+  const handleShare = async () => {
+    if (!inviteCode) return;
+    
+    const shareData = {
+      title: 'Datenbach Einladung',
+      text: `Hier ist mein Einladungscode: ${inviteCode.code}`,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        setCompanionMood('celebrating');
+        setCompanionMessage('Code wurde geteilt!');
+      } catch (err) {
+        // User cancelled or share failed
+        if ((err as Error).name !== 'AbortError') {
+          // Fallback to clipboard
+          await navigator.clipboard.writeText(inviteCode.code);
+          setCompanionMood('happy');
+          setCompanionMessage('Code kopiert!');
+        }
+      }
+    } else {
+      // Fallback to clipboard
+      await navigator.clipboard.writeText(inviteCode.code);
+      setCompanionMood('happy');
+      setCompanionMessage('Code kopiert!');
+    }
+  };
+
   const handleShowQR = () => {
     setCompanionMood('waving');
     setCompanionMessage('Zeig das deinem Freund!');
@@ -181,8 +211,8 @@ const Dashboard: React.FC = () => {
                     onSwipeLeft={handleSwipeRegenerate}
                   />
 
-                  {/* Regenerate button */}
-                  <div className="mt-6">
+                  {/* Buttons row */}
+                  <div className="mt-6 flex justify-center gap-2">
                     <PixelButton
                       variant="secondary"
                       size="sm"
@@ -190,6 +220,13 @@ const Dashboard: React.FC = () => {
                       disabled={isGenerating}
                     >
                       NEUER CODE
+                    </PixelButton>
+                    <PixelButton
+                      variant="primary"
+                      size="sm"
+                      onClick={handleShare}
+                    >
+                      TEILEN
                     </PixelButton>
                   </div>
                 </>
