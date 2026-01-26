@@ -147,13 +147,13 @@
   }
 
   .tear-off-edge {
-    background-image: repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 8px,
-      hsl(var(--border)) 8px,
-      hsl(var(--border)) 10px
+    background-image: radial-gradient(
+      circle at center,
+      hsl(var(--muted-foreground)) 2px,
+      transparent 2px
     );
+    background-size: 10px 10px;
+    height: 8px;
   }
 }
 

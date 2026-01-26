@@ -112,7 +112,7 @@ export const TearOffCode: React.FC<TearOffCodeProps> = ({
           <div
             key={index}
             className={cn(
-              "w-10 h-14 bg-pixel-cream flex items-center justify-center",
+              "w-10 h-14 bg-[hsl(45,100%,95%)] flex items-center justify-center",
               "border-2 border-border pixel-shadow",
               "transition-transform duration-150",
               !isSwiping && "group-hover:translate-y-1",
