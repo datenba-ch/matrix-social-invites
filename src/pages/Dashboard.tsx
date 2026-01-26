@@ -108,7 +108,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col p-4 relative overflow-hidden">
       {/* Animated forest background */}
-      <ForestBackground showFireflies={true} showTrees={true} />
+      <ForestBackground showFireflies={true} />
 
       {/* Header */}
       <header className="relative z-10 flex items-center justify-between mb-6">
@@ -123,15 +123,15 @@ const Dashboard: React.FC = () => {
         </PixelButton>
       </header>
 
-      {/* Main content */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center">
-        {/* Companion */}
-        <div className="mb-6">
-          <PixelCompanion mood={companionMood} message={companionMessage} size="md" />
+      {/* Main content - restructured layout */}
+      <main className="relative z-10 flex-1 flex flex-col">
+        {/* Companion in top third */}
+        <div className="flex-none pt-2 pb-4 flex flex-col items-center">
+          <PixelCompanion mood={companionMood} message={companionMessage} size="xl" />
         </div>
 
-        {/* Bulletin board */}
-        <BulletinBoard className="mb-6">
+        {/* Bulletin board fills remaining space */}
+        <BulletinBoard className="flex-1 max-w-sm">
           <div className="text-center">
             <h2 className="font-pixel text-[10px] text-foreground mb-4">
               EINLADUNGSCODE

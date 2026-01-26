@@ -10,7 +10,7 @@ const Welcome: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Animated forest background */}
-      <ForestBackground showFireflies={true} showTrees={true} />
+      <ForestBackground showFireflies={true} />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center text-center">
@@ -26,7 +26,7 @@ const Welcome: React.FC = () => {
         <PixelCompanion 
           mood={isLoading ? 'excited' : 'happy'}
           message={isLoading ? "Anmeldung..." : "Willkommen im Wald! Bereit Einladungscodes zu erstellen?"}
-          size="lg"
+          size="xl"
         />
 
         {/* Sign in button */}
