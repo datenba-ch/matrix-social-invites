@@ -2,13 +2,13 @@ import crypto from 'crypto';
 import type { Request, Response } from 'express';
 import { createClient } from 'redis';
 import { nanoid } from 'nanoid';
+import { getRedisClientOptions } from './redis.js';
 
 const COOKIE_NAME = 'ff_session';
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 
-const redisClient = createClient({
-  url: process.env.REDIS_URL,
-});
+const redisClientOptions = getRedisClientOptions();
+const redisClient = redisClientOptions ? createClient(redisClientOptions) : createClient();
 
 redisClient.on('error', (error) => {
   console.error('Redis client error', error);
@@ -16,7 +16,7 @@ redisClient.on('error', (error) => {
 
 await redisClient.connect();
 
-interface SessionData {
+export interface SessionData {
   state?: string;
   codeVerifier?: string;
   accessToken?: string;
@@ -103,6 +103,15 @@ const clearSession = async (sessionId: string) => {
 const getSignedSessionId = (req: Request) => {
   const signedCookie = req.signedCookies?.[COOKIE_NAME];
   return typeof signedCookie === 'string' ? signedCookie : null;
+};
+
+export const getSessionFromRequest = async (req: Request): Promise<SessionData | null> => {
+  const sessionId = getSignedSessionId(req);
+  if (!sessionId) {
+    return null;
+  }
+
+  return readSession(sessionId);
 };
 
 const ensureSessionId = (req: Request, res: Response) => {
