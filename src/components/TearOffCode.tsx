@@ -16,12 +16,14 @@ export const TearOffCode: React.FC<TearOffCodeProps> = ({
 }) => {
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
+  const [didSwipe, setDidSwipe] = useState(false);
   const startX = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX;
     setIsSwiping(true);
+    setDidSwipe(false);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -31,6 +33,7 @@ export const TearOffCode: React.FC<TearOffCodeProps> = ({
     // Only allow left swipe
     if (diff > 0) {
       setSwipeOffset(Math.min(diff, 100));
+      if (diff > 10) setDidSwipe(true);
     }
   };
 
@@ -46,6 +49,7 @@ export const TearOffCode: React.FC<TearOffCodeProps> = ({
   const handleMouseDown = (e: React.MouseEvent) => {
     startX.current = e.clientX;
     setIsSwiping(true);
+    setDidSwipe(false);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -53,6 +57,7 @@ export const TearOffCode: React.FC<TearOffCodeProps> = ({
     const diff = startX.current - e.clientX;
     if (diff > 0) {
       setSwipeOffset(Math.min(diff, 100));
+      if (diff > 10) setDidSwipe(true);
     }
   };
 
@@ -69,6 +74,14 @@ export const TearOffCode: React.FC<TearOffCodeProps> = ({
       setSwipeOffset(0);
       setIsSwiping(false);
     }
+  };
+
+  const handleClick = () => {
+    // Only trigger click if we didn't swipe
+    if (!didSwipe) {
+      onClick?.();
+    }
+    setDidSwipe(false);
   };
 
   const swipeProgress = swipeOffset / 60;
@@ -92,7 +105,7 @@ export const TearOffCode: React.FC<TearOffCodeProps> = ({
       <div 
         ref={containerRef}
         className="flex justify-center gap-1.5 cursor-pointer group select-none"
-        onClick={onClick}
+        onClick={handleClick}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
