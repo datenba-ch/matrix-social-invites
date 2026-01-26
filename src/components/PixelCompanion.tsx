@@ -26,9 +26,9 @@ const FoxSprite: React.FC<{ mood: CompanionMood; size: 'sm' | 'md' | 'lg' | 'xl'
 
   const sizeClasses = {
     sm: 'w-12 h-12',
-    md: 'w-20 h-20',
-    lg: 'w-32 h-32',
-    xl: 'w-40 h-40',
+    md: 'w-16 h-16 sm:w-20 sm:h-20',
+    lg: 'w-24 h-24 sm:w-32 sm:h-32',
+    xl: 'w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40',
   };
 
   const getEarOffset = () => {
