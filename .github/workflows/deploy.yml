@@ -1,0 +1,93 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: rg.fr-par.scw.cloud
+  INTERNAL_IMAGE: rg.fr-par.scw.cloud/datenbach/invites
+  GHCR_IMAGE: ghcr.io/${{ github.repository }}
+  PLATFORMS: linux/amd64
+  SCW_CONTAINER_ID: 63599a6d-934c-426e-91c6-2b71659ede6c
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Scaleway Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.SCW_ACCESS_KEY }}
+          password: ${{ secrets.SCW_SECRET_KEY }}
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        env:
+          GIT_SHA: ${{ github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REF_NAME: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          TAG_SHA="sha-${GIT_SHA:0:7}"
+          TAGS=()
+
+          if [[ "${REF_NAME}" == "refs/heads/main" ]]; then
+            for image in "${INTERNAL_IMAGE}" "${GHCR_IMAGE}"; do
+              TAGS+=("-t" "${image}:latest" "-t" "${image}:${TAG_SHA}")
+            done
+          else
+            if [[ -z "${PR_NUMBER:-}" ]]; then
+              echo "PR_NUMBER is required for non-main builds" >&2
+              exit 1
+            fi
+            for image in "${INTERNAL_IMAGE}" "${GHCR_IMAGE}"; do
+              TAGS+=("-t" "${image}:pr-${PR_NUMBER}" "-t" "${image}:${TAG_SHA}")
+            done
+          fi
+
+          docker buildx build \
+            --platform "${PLATFORMS}" \
+            -f Dockerfile \
+            --push \
+            "${TAGS[@]}" \
+            .
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-push
+    if: ${{ github.ref == 'refs/heads/main' }}
+    steps:
+      - name: Install Scaleway CLI
+        run: |
+          set -euo pipefail
+          curl -fsSL https://github.com/scaleway/scaleway-cli/releases/latest/download/scw-linux-amd64 -o /tmp/scw
+          chmod +x /tmp/scw
+          sudo mv /tmp/scw /usr/local/bin/scw
+
+      - name: Deploy container
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+          SCW_DEFAULT_REGION: ${{ secrets.SCW_DEFAULT_REGION }}
+        run: scw container container deploy "${SCW_CONTAINER_ID}"
