@@ -1,9 +1,21 @@
-import http from "http";
-import { createReadStream } from "fs";
-import { stat } from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
+import cookieParser from "cookie-parser";
+import crypto from "crypto";
+import express from "express";
 import net from "net";
+import path from "path";
+import tls from "tls";
+import { fileURLToPath } from "url";
+import { createClient } from "redis";
+
+import {
+  handleCallback,
+  handleLogin,
+  handleLogout,
+  handleMe,
+  handleRefresh,
+  getSessionFromRequest,
+} from "./auth.js";
+import { getRedisClientOptions, getRedisConnectionInfo } from "./redis.js";
 
 const port = Number(process.env.PORT ?? 3000);
 
@@ -23,46 +35,81 @@ const matrixConfig = {
   accessToken: process.env.MATRIX_ACCESS_TOKEN,
   userId: process.env.MATRIX_USER_ID,
 };
+const matrixAdminApiBase = process.env.MATRIX_ADMIN_API_BASE;
 
-const redisUrl = process.env.REDIS_URL;
+const redisClientOptions = getRedisClientOptions();
+const inviteRedisClient = redisClientOptions ? createClient(redisClientOptions) : null;
+const redisConfigured = Boolean(redisClientOptions);
 
-const contentTypes: Record<string, string> = {
-  ".html": "text/html; charset=utf-8",
-  ".js": "application/javascript; charset=utf-8",
-  ".css": "text/css; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".svg": "image/svg+xml",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".ico": "image/x-icon",
-  ".map": "application/json; charset=utf-8",
-  ".txt": "text/plain; charset=utf-8",
+const INVITE_TTL_DAYS = 7;
+const INVITE_TTL_SECONDS = INVITE_TTL_DAYS * 24 * 60 * 60;
+const INVITE_CODE_LENGTH = 7;
+const INVITE_CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const INVITE_SESSION_COOKIE = "invite_session_id";
+const INVITE_USER_PREFIX = "invite:user:";
+const INVITE_SESSION_PREFIX = "invite:session:";
+
+const generateInviteCode = () => {
+  let code = "";
+  for (let i = 0; i < INVITE_CODE_LENGTH; i += 1) {
+    code += INVITE_CODE_CHARS.charAt(Math.floor(Math.random() * INVITE_CODE_CHARS.length));
+  }
+  return code;
+};
+
+type InvitePayload = {
+  code: string;
+  createdAt: number;
+  expiresAt: number;
+  tokenId: string;
+};
+
+type RegistrationTokenAttributes = {
+  token: string;
+  created_at: string;
+  expires_at: string | null;
+};
+
+type RegistrationTokenResource = {
+  id?: string;
+  attributes?: RegistrationTokenAttributes;
+};
+
+type RegistrationTokenResponse = {
+  data?: RegistrationTokenResource;
 };
 
 const pingRedis = async (): Promise<boolean> => {
-  if (!redisUrl) {
+  const redisInfo = getRedisConnectionInfo();
+  if (!redisInfo) {
     return false;
   }
 
-  let url: URL;
-  try {
-    url = new URL(redisUrl);
-  } catch {
-    return false;
-  }
-
-  const port = Number(url.port || 6379);
-  const host = url.hostname;
-  const password = url.password;
+  const { host, port, password, username, tls: useTls, tlsInsecure } = redisInfo;
 
   return new Promise((resolve) => {
-    const socket = net.createConnection({ host, port }, () => {
+    const socket = useTls
+      ? tls.connect({ host, port, rejectUnauthorized: !tlsInsecure })
+      : net.createConnection({ host, port });
+
+    const sendPing = () => {
       if (password) {
-        socket.write(`*2\r\n$4\r\nAUTH\r\n$${password.length}\r\n${password}\r\n`);
+        if (username) {
+          socket.write(
+            `*3\r\n$4\r\nAUTH\r\n$${username.length}\r\n${username}\r\n$${password.length}\r\n${password}\r\n`,
+          );
+        } else {
+          socket.write(`*2\r\n$4\r\nAUTH\r\n$${password.length}\r\n${password}\r\n`);
+        }
       }
       socket.write("*1\r\n$4\r\nPING\r\n");
-    });
+    };
+
+    if (useTls) {
+      socket.once("secureConnect", sendPing);
+    } else {
+      socket.once("connect", sendPing);
+    }
 
     const timeout = setTimeout(() => {
       socket.destroy();
@@ -90,92 +137,362 @@ const pingRedis = async (): Promise<boolean> => {
   });
 };
 
-const sendJson = (res: http.ServerResponse, statusCode: number, payload: unknown) => {
-  res.writeHead(statusCode, { "Content-Type": "application/json; charset=utf-8" });
-  res.end(JSON.stringify(payload));
+const app = express();
+
+app.use(express.json());
+
+if (!process.env.SESSION_COOKIE_SECRET) {
+  throw new Error("SESSION_COOKIE_SECRET is required to sign cookies.");
+}
+
+app.use(cookieParser(process.env.SESSION_COOKIE_SECRET));
+
+app.get("/api/health", async (_req, res) => {
+  const redisOk = await pingRedis();
+  res.status(200).json({
+    status: "ok",
+    redis: redisConfigured ? (redisOk ? "connected" : "error") : "disabled",
+    oidcConfigured: Boolean(oidcConfig.issuerUrl && oidcConfig.clientId),
+    matrixConfigured: Boolean(matrixConfig.homeserverUrl && matrixConfig.userId),
+  });
+});
+
+app.get("/api/config", (_req, res) => {
+  res.status(200).json({
+    oidc: {
+      issuerUrl: oidcConfig.issuerUrl,
+      clientId: oidcConfig.clientId,
+      redirectUri: oidcConfig.redirectUri,
+      configured: Boolean(oidcConfig.issuerUrl && oidcConfig.clientId),
+    },
+    matrix: {
+      homeserverUrl: matrixConfig.homeserverUrl,
+      userId: matrixConfig.userId,
+      configured: Boolean(matrixConfig.homeserverUrl && matrixConfig.userId),
+    },
+    redis: {
+      configured: redisConfigured,
+      urlSet: Boolean(process.env.REDIS_URL),
+    },
+  });
+});
+
+const getCookieValue = (cookieHeader: string | undefined, name: string) => {
+  if (!cookieHeader) return null;
+  const cookies = cookieHeader.split(";");
+  for (const cookie of cookies) {
+    const [key, ...valueParts] = cookie.trim().split("=");
+    if (key === name) {
+      return valueParts.join("=");
+    }
+  }
+  return null;
 };
 
-const serveFile = async (res: http.ServerResponse, filePath: string) => {
-  try {
-    const fileStat = await stat(filePath);
-    if (!fileStat.isFile()) {
-      res.writeHead(404);
-      res.end();
-      return;
-    }
+const getInviteSessionId = (req: express.Request) =>
+  getCookieValue(req.headers.cookie, INVITE_SESSION_COOKIE);
 
-    const ext = path.extname(filePath);
-    const contentType = contentTypes[ext] ?? "application/octet-stream";
+const inviteSessionKey = (sessionId: string) => `${INVITE_SESSION_PREFIX}${sessionId}`;
+const inviteUserKey = (matrixId: string) => `${INVITE_USER_PREFIX}${matrixId}`;
 
-    res.writeHead(200, { "Content-Type": contentType });
-    createReadStream(filePath).pipe(res);
-  } catch {
-    res.writeHead(404);
-    res.end();
+type InviteStorageInfo = {
+  key: string;
+  sessionId?: string;
+  matrixId?: string;
+};
+
+const getInviteStorageInfo = async (req: express.Request, sessionIdOverride?: string): Promise<InviteStorageInfo | null> => {
+  const session = await getSessionFromRequest(req);
+  const matrixId = session?.user?.matrixId;
+  const sessionId = sessionIdOverride ?? getInviteSessionId(req) ?? undefined;
+
+  if (matrixId) {
+    return {
+      key: inviteUserKey(matrixId),
+      matrixId,
+      sessionId,
+    };
+  }
+
+  if (sessionId) {
+    return {
+      key: inviteSessionKey(sessionId),
+      sessionId,
+    };
+  }
+
+  return null;
+};
+
+const getInviteKeys = (storage?: InviteStorageInfo): string[] => {
+  if (!storage) {
+    return [];
+  }
+
+  const keys: string[] = [];
+  if (storage.matrixId) {
+    keys.push(inviteUserKey(storage.matrixId));
+  }
+  if (storage.sessionId) {
+    keys.push(inviteSessionKey(storage.sessionId));
+  }
+  return keys;
+};
+
+const deleteInviteEntries = async (storage: InviteStorageInfo | null) => {
+  if (!inviteRedisClient || !storage) {
+    return;
+  }
+
+  const keys = getInviteKeys(storage);
+  if (keys.length === 0) {
+    return;
+  }
+
+  await inviteRedisClient.del(keys);
+};
+
+const ensureInviteSessionId = (req: express.Request, res: express.Response) => {
+  const existing = getInviteSessionId(req);
+  if (existing) return existing;
+
+  const sessionId = crypto.randomUUID();
+  res.setHeader(
+    "Set-Cookie",
+    `${INVITE_SESSION_COOKIE}=${sessionId}; Path=/; Max-Age=${INVITE_TTL_SECONDS}; HttpOnly; SameSite=Lax`,
+  );
+  return sessionId;
+};
+
+const getAdminApiBase = () => {
+  const base = matrixAdminApiBase ?? matrixConfig.homeserverUrl;
+  if (!base) {
+    throw new Error("MATRIX_ADMIN_API_BASE or MATRIX_HOMESERVER_URL is required.");
+  }
+  return base.replace(/\/+$/, ""); // trim trailing slash
+};
+
+const getAdminAccessToken = () => {
+  const token = matrixConfig.accessToken;
+  if (!token) {
+    throw new Error("MATRIX_ACCESS_TOKEN is required.");
+  }
+  return token;
+};
+
+const revokeRegistrationToken = async (tokenId: string) => {
+  const adminBase = getAdminApiBase();
+  const accessToken = getAdminAccessToken();
+  const response = await fetch(
+    new URL(`api/admin/v1/user-registration-tokens/${tokenId}/revoke`, `${adminBase}/`),
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to revoke registration token ${tokenId}: ${response.status} ${errorText}`,
+    );
   }
 };
 
-const server = http.createServer(async (req, res) => {
-  if (!req.url) {
-    res.writeHead(400);
-    res.end();
+const invalidateActiveInvite = async (storage: InviteStorageInfo | null) => {
+  if (!inviteRedisClient || !storage) {
     return;
   }
 
-  const url = new URL(req.url, `http://${req.headers.host ?? "localhost"}`);
-
-  if (url.pathname.startsWith("/api/")) {
-    if (url.pathname === "/api/health") {
-      const redisOk = await pingRedis();
-      sendJson(res, 200, {
-        status: "ok",
-        redis: redisUrl ? (redisOk ? "connected" : "error") : "disabled",
-        oidcConfigured: Boolean(oidcConfig.issuerUrl && oidcConfig.clientId),
-        matrixConfigured: Boolean(matrixConfig.homeserverUrl && matrixConfig.userId),
-      });
-      return;
-    }
-
-    if (url.pathname === "/api/config") {
-      sendJson(res, 200, {
-        oidc: {
-          issuerUrl: oidcConfig.issuerUrl,
-          clientId: oidcConfig.clientId,
-          redirectUri: oidcConfig.redirectUri,
-          configured: Boolean(oidcConfig.issuerUrl && oidcConfig.clientId),
-        },
-        matrix: {
-          homeserverUrl: matrixConfig.homeserverUrl,
-          userId: matrixConfig.userId,
-          configured: Boolean(matrixConfig.homeserverUrl && matrixConfig.userId),
-        },
-        redis: {
-          urlSet: Boolean(redisUrl),
-        },
-      });
-      return;
-    }
-
-    sendJson(res, 404, { error: "Not found" });
-    return;
-  }
-
-  const safePath = path.normalize(url.pathname).replace(/^\.+/, "");
-  const filePath = path.join(distPath, safePath);
-
-  if (safePath === "/" || safePath === "") {
-    await serveFile(res, path.join(distPath, "index.html"));
+  const keys = getInviteKeys(storage);
+  if (keys.length === 0) {
     return;
   }
 
   try {
-    await stat(filePath);
-    await serveFile(res, filePath);
-  } catch {
-    await serveFile(res, path.join(distPath, "index.html"));
+    for (const key of keys) {
+      const raw = await inviteRedisClient.get(key);
+      if (!raw) {
+        continue;
+      }
+
+      const payload = JSON.parse(raw) as InvitePayload;
+      if (!payload?.expiresAt) {
+        continue;
+      }
+
+      if (payload.expiresAt > Date.now() && payload.tokenId) {
+        try {
+          await revokeRegistrationToken(payload.tokenId);
+        } catch (error) {
+          console.error("Failed to revoke previous registration token", error);
+        }
+      }
+
+      break;
+    }
+  } catch (error) {
+    console.error("Failed to invalidate active invite", error);
+  } finally {
+    await deleteInviteEntries(storage);
+  }
+};
+
+const createRegistrationToken = async (): Promise<InvitePayload> => {
+  const adminBase = getAdminApiBase();
+  const accessToken = getAdminAccessToken();
+  const expiresAt = new Date(Date.now() + INVITE_TTL_SECONDS * 1000).toISOString();
+  const token = generateInviteCode();
+
+  const response = await fetch(
+    new URL("api/admin/v1/user-registration-tokens", `${adminBase}/`),
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        expires_at: expiresAt,
+        token,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to create registration token: ${errorText}`);
+  }
+
+  const payload = (await response.json()) as RegistrationTokenResponse;
+  const resource = payload.data;
+  const attrs = resource?.attributes;
+  if (!attrs?.token || !attrs.created_at) {
+    throw new Error("Registration token response is missing required fields.");
+  }
+  if (!resource?.id) {
+    throw new Error("Registration token response is missing an ID.");
+  }
+
+  const createdAtMs = Date.parse(attrs.created_at);
+  const expiresAtMs = attrs.expires_at ? Date.parse(attrs.expires_at) : NaN;
+  const createdAt = Number.isNaN(createdAtMs) ? Date.now() : createdAtMs;
+  const expiresAtFinal = Number.isNaN(expiresAtMs)
+    ? createdAt + INVITE_TTL_SECONDS * 1000
+    : expiresAtMs;
+
+  return {
+    code: attrs.token,
+    createdAt,
+    expiresAt: expiresAtFinal,
+    tokenId: resource.id,
+  };
+};
+
+app.post("/api/auth/login", handleLogin);
+app.get("/api/auth/callback", handleCallback);
+app.post("/api/auth/refresh", handleRefresh);
+app.post("/api/auth/logout", handleLogout);
+app.get("/api/me", handleMe);
+
+app.post("/api/invites", async (req, res) => {
+  if (!inviteRedisClient) {
+    res.status(500).json({ message: "Redis is not configured." });
+    return;
+  }
+
+  try {
+    const sessionId = ensureInviteSessionId(req, res);
+    const storage = await getInviteStorageInfo(req, sessionId);
+    await invalidateActiveInvite(storage);
+    const payload = await createRegistrationToken();
+    const key = storage?.key;
+    if (!key) {
+      res.status(500).json({ message: "Unable to determine invite storage key." });
+      return;
+    }
+    await inviteRedisClient.set(key, JSON.stringify(payload), {
+      EX: INVITE_TTL_SECONDS,
+    });
+    res.status(200).json(payload);
+  } catch (error) {
+    console.error("Invite create error", error);
+    res.status(500).json({ message: "Internal server error." });
   }
 });
 
-server.listen(port, () => {
+app.get("/api/invites/current", async (req, res) => {
+  if (!inviteRedisClient) {
+    res.status(500).json({ message: "Redis is not configured." });
+    return;
+  }
+
+  try {
+    const storage = await getInviteStorageInfo(req);
+    const key = storage?.key;
+    if (!key) {
+      res.status(404).json({ message: "Invite code not found." });
+      return;
+    }
+
+    const raw = await inviteRedisClient.get(key);
+    if (!raw) {
+      res.status(404).json({ message: "Invite code not found." });
+      return;
+    }
+    const parsed = JSON.parse(raw) as InvitePayload;
+    if (!parsed?.expiresAt || parsed.expiresAt <= Date.now()) {
+      await deleteInviteEntries(storage);
+      res.status(404).json({ message: "Invite code not found." });
+      return;
+    }
+    res.status(200).json(parsed);
+  } catch (error) {
+    console.error("Invite fetch error", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+app.delete("/api/invites/current", async (req, res) => {
+  if (!inviteRedisClient) {
+    res.status(500).json({ message: "Redis is not configured." });
+    return;
+  }
+
+  try {
+    const storage = await getInviteStorageInfo(req);
+    if (storage?.key) {
+      await deleteInviteEntries(storage);
+    }
+    res.sendStatus(204);
+  } catch (error) {
+    console.error("Invite delete error", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+app.use("/api", (_req, res) => {
+  res.status(404).json({ error: "Not found" });
+});
+
+app.use(express.static(distPath, { index: false }));
+
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(distPath, "index.html"));
+});
+
+if (inviteRedisClient) {
+  inviteRedisClient.on("error", (error) => {
+    console.error("Invite Redis client error", error);
+  });
+  inviteRedisClient.connect().catch((error) => {
+    console.error("Failed to connect invite Redis client", error);
+  });
+}
+
+app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });

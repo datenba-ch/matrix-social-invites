@@ -1,108 +1,61 @@
-# Welcome to your Lovable project
+# Forest Friend Invites
 
-## Project info
+Forest Friend Invites lets a Matrix-powered companion generate and manage a shared registration token for a Matrix homeserver. The React frontend is paired with an Express+Redis backend: after logging in via OIDC, the authenticated Matrix user can issue, view, and revoke a single invite token that other devices sharing the same Matrix identity can reuse.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
-
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Development
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+The UI lives under `src/` and the backend server (for auth, invite CRUD, and health checks) is under `server/`.
 
 ## Environment variables
 
-Backend services require the following environment variables. Values shown below are examples.
-
 ```sh
-MATRIX_AUTH_SECRET="replace-with-strong-secret"
-REDIS_URL="redis://localhost:6379"
+MATRIX_AUTH_SECRET="replace-with-strong-secret"       # signs session cookies
+REDIS_HOST="localhost"                               # host for the invite/session cache
+REDIS_PORT="6379"
+REDIS_USER="your-redis-username"
+REDIS_PASS="your-redis-password"
+REDIS_TLS="false"
+REDIS_TLS_INSECURE="false"
+REDIS_URL="redis://localhost:6379"                   # optional override that skips the host/port/user/pass vars
 OIDC_CLIENT_ID="your-oidc-client-id"
 OIDC_CLIENT_SECRET="your-oidc-client-secret"
 OIDC_ISSUER_URL="https://issuer.example.com"
 OIDC_REDIRECT_URI="http://localhost:5173/auth/callback"
+MATRIX_HOMESERVER_URL="https://matrix.example.com"
+MATRIX_ACCESS_TOKEN="your-matrix-token"
+MATRIX_USER_ID="@bot:example.com"
 ```
 
-## How can I deploy this project?
+## Deployment
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Docker deployment
-
-This project now ships with a backend server that serves the built Vite frontend and exposes `/api/*` routes. Build and run the container like this:
+Build the server and run it behind any HTTP proxy. The Docker container is a convenience wrapper:
 
 ```sh
-docker build -t forest-friend-invites .
-
-docker run --rm -p 3000:3000 \
-  -e PORT=3000 \
-  -e REDIS_URL=redis://redis:6379 \
-  -e OIDC_ISSUER_URL=https://issuer.example.com \
-  -e OIDC_CLIENT_ID=your-client-id \
-  -e OIDC_CLIENT_SECRET=your-client-secret \
-  -e OIDC_REDIRECT_URI=https://your-app.example.com/callback \
-  -e MATRIX_HOMESERVER_URL=https://matrix.example.com \
-  -e MATRIX_ACCESS_TOKEN=your-matrix-token \
-  -e MATRIX_USER_ID=@bot:example.com \
-  forest-friend-invites
+docker compose up --build
 ```
 
-### Environment variables
+The backend exposes:
+
+- `POST /api/auth/login`, `/api/auth/logout`, `/api/auth/refresh`, `/api/me`
+- `POST /api/invites`, `GET /api/invites/current`, `DELETE /api/invites/current`
+- `GET /api/health`, `GET /api/config`
 
 | Variable | Description |
 | --- | --- |
 | `PORT` | Port that the backend server listens on (default: `3000`). |
-| `REDIS_URL` | Redis connection string for backend caching/state (optional). |
+| `REDIS_HOST` | Redis host (optional; use with `REDIS_PORT`, `REDIS_USER`, `REDIS_PASS`). |
+| `REDIS_PORT` | Redis port (default: `6379`). |
+| `REDIS_USER` | Redis username (optional). |
+| `REDIS_PASS` | Redis password (optional). |
+| `REDIS_TLS` | Set to `true` to enable TLS when using `REDIS_HOST`. |
+| `REDIS_TLS_INSECURE` | Set to `true` to skip TLS certificate validation. |
+| `REDIS_URL` | Redis connection string for backend caching/state (optional, overrides host/port settings). |
+| `MATRIX_AUTH_SECRET` | Secret used to sign the session cookie. |
 | `OIDC_ISSUER_URL` | OIDC issuer base URL. |
 | `OIDC_CLIENT_ID` | OIDC client ID. |
 | `OIDC_CLIENT_SECRET` | OIDC client secret. |
@@ -110,11 +63,3 @@ docker run --rm -p 3000:3000 \
 | `MATRIX_HOMESERVER_URL` | Matrix homeserver URL. |
 | `MATRIX_ACCESS_TOKEN` | Matrix access token for the bot/user. |
 | `MATRIX_USER_ID` | Matrix user ID (e.g. `@bot:example.com`). |
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
