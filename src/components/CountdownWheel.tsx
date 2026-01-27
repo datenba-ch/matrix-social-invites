@@ -1,57 +1,53 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface CountdownWheelProps {
   progress: number; // 0-1, where 0 is fresh and 1 is expired
-  daysRemaining: number;
-  hoursRemaining: number;
-  minutesRemaining?: number;
+  expiresAt: number;
   className?: string;
 }
 
+const msPerMinute = 60 * 1000;
+const msPerHour = 60 * msPerMinute;
+const msPerDay = 24 * msPerHour;
+
+const calculateLiveTime = (expiresAt: number) => {
+  const remaining = Math.max(0, expiresAt - Date.now());
+  const days = Math.floor(remaining / msPerDay);
+  const hours = Math.floor((remaining % msPerDay) / msPerHour);
+  const minutes = Math.floor((remaining % msPerHour) / msPerMinute);
+  return { days, hours, minutes };
+};
+
 export const CountdownWheel: React.FC<CountdownWheelProps> = ({
   progress,
-  daysRemaining,
-  hoursRemaining,
-  minutesRemaining = 0,
+  expiresAt,
   className,
 }) => {
   const [displayProgress, setDisplayProgress] = useState(0);
-  const [liveTime, setLiveTime] = useState({ days: daysRemaining, hours: hoursRemaining, minutes: minutesRemaining });
+  const [liveTime, setLiveTime] = useState(() => calculateLiveTime(expiresAt));
+
+  const primaryGreenStyle = { color: '#8da101' };
+  const accentGreenStyle = { color: '#8da101' };
+  const trackColor = '#8da101';
+  const fillColor = '#8da101';
 
   useEffect(() => {
-    // Animate progress on mount
     const timer = setTimeout(() => {
       setDisplayProgress(progress);
     }, 100);
     return () => clearTimeout(timer);
   }, [progress]);
 
-  // Live countdown timer
   useEffect(() => {
-    setLiveTime({ days: daysRemaining, hours: hoursRemaining, minutes: minutesRemaining });
-    
-    const interval = setInterval(() => {
-      setLiveTime(prev => {
-        let { days, hours, minutes } = prev;
-        
-        if (minutes > 0) {
-          minutes--;
-        } else if (hours > 0) {
-          hours--;
-          minutes = 59;
-        } else if (days > 0) {
-          days--;
-          hours = 23;
-          minutes = 59;
-        }
-        
-        return { days, hours, minutes };
-      });
-    }, 60000); // Update every minute
-    
+    const tick = () => {
+      setLiveTime(calculateLiveTime(expiresAt));
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [daysRemaining, hoursRemaining, minutesRemaining]);
+  }, [expiresAt]);
 
   // Generate notched segments (14 segments = 7 days × 2 half-days)
   const totalSegments = 14;
@@ -65,30 +61,43 @@ export const CountdownWheel: React.FC<CountdownWheelProps> = ({
   // Calculate how many segments should be filled (counting from segment 0)
   const filledSegments = Math.ceil((1 - displayProgress) * totalSegments);
 
-  // Format time display
-  const formatTime = () => {
+  const formattedTime = useMemo(() => {
+    const timeStyle = { color: '#8da101' };
+
     if (liveTime.days > 0) {
       return (
         <>
-          <span className="font-pixel text-2xl text-primary">{liveTime.days}</span>
-          <span className="font-pixel text-[10px] text-muted-foreground">
+          <span className="font-pixel text-lg tracking-[0.35em]" style={primaryGreenStyle}>
+            {liveTime.days}
+          </span>
+          <span className="font-pixel text-[9px] tracking-[0.45em]" style={accentGreenStyle}>
             {liveTime.days === 1 ? 'TAG' : 'TAGE'}
           </span>
-          <span className="font-pixel text-xs text-primary/70 mt-0.5">
-            {String(liveTime.hours).padStart(2, '0')}:{String(liveTime.minutes).padStart(2, '0')}
+          <span
+            className="font-pixel text-[10px] mt-0.5 tracking-[0.18em] flex items-center gap-[0.25em]"
+            style={{ ...timeStyle, lineHeight: 1 }}
+          >
+            <span className="tabular-nums">{String(liveTime.hours).padStart(2, '0')}</span>
+            <span className="countdown-colon">:</span>
+            <span className="tabular-nums">{String(liveTime.minutes).padStart(2, '0')}</span>
           </span>
         </>
       );
     }
     return (
       <>
-        <span className="font-pixel text-xl text-primary">
-          {String(liveTime.hours).padStart(2, '0')}:{String(liveTime.minutes).padStart(2, '0')}
+        <span
+          className="font-pixel text-[10px] tracking-[0.2em] flex items-center gap-[0.25em]"
+          style={{ ...timeStyle, lineHeight: 1 }}
+        >
+          <span className="tabular-nums">{String(liveTime.hours).padStart(2, '0')}</span>
+          <span className="countdown-colon">:</span>
+          <span className="tabular-nums">{String(liveTime.minutes).padStart(2, '0')}</span>
         </span>
-        <span className="font-pixel text-[10px] text-muted-foreground">STUNDEN</span>
+        <span className="font-pixel text-[9px]" style={accentGreenStyle}>STUNDEN</span>
       </>
     );
-  };
+  }, [liveTime]);
 
   return (
     <div className={cn("relative w-[70%] aspect-square mx-auto", className)}>
@@ -97,19 +106,19 @@ export const CountdownWheel: React.FC<CountdownWheelProps> = ({
         {Array.from({ length: totalSegments }).map((_, index) => {
           const rotation = (index * 360) / totalSegments - 90;
           return (
-            <circle
-              key={`bg-${index}`}
-              cx="50"
-              cy="50"
-              r={radius}
-              fill="none"
-              stroke="hsl(var(--primary) / 0.2)"
-              strokeWidth={strokeWidth}
-              strokeDasharray={`${arcLength} ${circumference - arcLength}`}
-              strokeDashoffset={0}
-              strokeLinecap="butt"
-              transform={`rotate(${rotation} 50 50)`}
-            />
+          <circle
+            key={`bg-${index}`}
+            cx="50"
+            cy="50"
+            r={radius}
+            fill="none"
+            stroke={trackColor}
+            strokeWidth={strokeWidth}
+            strokeDasharray={`${arcLength} ${circumference - arcLength}`}
+            strokeDashoffset={0}
+            strokeLinecap="butt"
+            transform={`rotate(${rotation} 50 50)`}
+          />
           );
         })}
         
@@ -118,13 +127,13 @@ export const CountdownWheel: React.FC<CountdownWheelProps> = ({
           const isFilled = index < filledSegments;
           const rotation = (index * 360) / totalSegments - 90;
           return (
-            <circle
-              key={`fill-${index}`}
-              cx="50"
-              cy="50"
-              r={radius}
-              fill="none"
-              stroke="hsl(var(--primary))"
+          <circle
+            key={`fill-${index}`}
+            cx="50"
+            cy="50"
+            r={radius}
+            fill="none"
+            stroke={fillColor}
               strokeWidth={strokeWidth}
               strokeDasharray={`${arcLength} ${circumference - arcLength}`}
               strokeDashoffset={0}
@@ -141,7 +150,7 @@ export const CountdownWheel: React.FC<CountdownWheelProps> = ({
       
       {/* Center text - live countdown */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        {formatTime()}
+        {formattedTime}
       </div>
     </div>
   );
