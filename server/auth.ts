@@ -26,6 +26,7 @@ export interface SessionData {
     id: string;
     displayName: string;
     matrixId: string;
+    avatarUrl?: string;
   };
 }
 
@@ -81,6 +82,69 @@ const getOidcConfig = async (): Promise<OidcConfig> => {
   };
 
   return cachedOidcConfig;
+};
+
+type MatrixProfile = {
+  displayName?: string;
+  avatarUrl?: string;
+};
+
+const matrixProfileBase = () => {
+  const baseUrl =
+    process.env.MATRIX_ADMIN_API_BASE ?? process.env.MATRIX_HOMESERVER_URL;
+  if (!baseUrl) {
+    return null;
+  }
+  return baseUrl.replace(/\/$/, '');
+};
+
+const fetchMatrixProfile = async (
+  matrixId: string,
+): Promise<MatrixProfile | null> => {
+  const base = matrixProfileBase();
+  if (!base) {
+    return null;
+  }
+
+  let response: globalThis.Response | null = null;
+  try {
+    const profileUrl = new URL(
+      `/_matrix/client/v3/profile/${encodeURIComponent(matrixId)}`,
+      base,
+    );
+    response = await fetch(profileUrl.toString());
+  } catch (error) {
+    console.warn('Failed to build matrix profile URL', error);
+    return null;
+  }
+
+  if (!response) {
+    return null;
+  }
+
+  if (!response.ok) {
+    if (response.status === 403 || response.status === 404) {
+      return null;
+    }
+    console.warn(
+      'Matrix profile lookup returned unexpected status',
+      response.status,
+    );
+    return null;
+  }
+
+  try {
+    const data = (await response.json()) as Record<string, unknown>;
+    return {
+      displayName:
+        typeof data.displayname === 'string' ? data.displayname : undefined,
+      avatarUrl:
+        typeof data.avatar_url === 'string' ? data.avatar_url : undefined,
+    };
+  } catch (error) {
+    console.warn('Failed to parse matrix profile response', error);
+    return null;
+  }
 };
 
 const getSessionKey = (sessionId: string) => `session:${sessionId}`;
@@ -260,13 +324,19 @@ export const handleCallback = async (req: Request, res: Response) => {
       (userInfo?.sub as string | undefined) ||
       'unknown';
 
+    const fallbackDisplayName =
+      (userInfo?.name as string | undefined) ||
+      (userInfo?.preferred_username as string | undefined) ||
+      matrixId;
+
+    const profile = await fetchMatrixProfile(matrixId);
+    const displayName = profile?.displayName ?? fallbackDisplayName;
+
     const user = {
       id: (userInfo?.sub as string | undefined) ?? matrixId,
-      displayName:
-        (userInfo?.name as string | undefined) ||
-        (userInfo?.preferred_username as string | undefined) ||
-        matrixId,
+      displayName,
       matrixId,
+      ...(profile?.avatarUrl ? { avatarUrl: profile.avatarUrl } : {}),
     };
 
     await writeSession(sessionId, {
