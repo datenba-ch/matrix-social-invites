@@ -35,9 +35,11 @@ Datenbach Social Invites lets a Matrix user generate and manage a shared registr
 Currently these tokens are generated with a invalidation timeout of 7 days and will automatically refresh. This allows our users to share their weekly invite code with their friends and family easily.
 
 ## 📦 Installation
+
 $${\color{#AC3097}Install \space \color{#56565E}Retro}$$ 
 
 The easiest way to install is to use Docker Compose.
+
 ```sh
 # copy the environment variables from the .env.example file to a new .env file
 cp .env.example .env
@@ -47,14 +49,6 @@ docker compose up
 ```
 
 Then navigate to `http://localhost:8080` in your browser.
-
-
-
-
-$${\color{#AC3097}Uninstall \space \color{#56565E}Retro}$$
-```sh
-~/.local/bin/uninstall_retro.sh
-```
 
 ## 🎮 Development
 
@@ -70,25 +64,41 @@ docker compose -f docker-compose.dev.yml up --build
 
 ## 🚦️ Environment variables
 
-The servers behaviour is controlled by the following environment variables:
+Most deployments can copy `.env.example` and edit values. These are the variables the server actually reads:
 
-```sh
-MATRIX_AUTH_SECRET="replace-with-strong-secret"       # signs session cookies
-REDIS_HOST="localhost"                               # host for the invite/session cache
-REDIS_PORT="6379"
-REDIS_USER="your-redis-username"
-REDIS_PASS="your-redis-password"
-REDIS_TLS="false"
-REDIS_TLS_INSECURE="false"
-REDIS_URL="redis://localhost:6379"                   # optional override that skips the host/port/user/pass vars
-OIDC_CLIENT_ID="your-oidc-client-id"
-OIDC_CLIENT_SECRET="your-oidc-client-secret"
-OIDC_ISSUER_URL="https://issuer.example.com"
-OIDC_REDIRECT_URI="http://localhost:5173/auth/callback"
-MATRIX_HOMESERVER_URL="https://matrix.example.com"
-MATRIX_ACCESS_TOKEN="your-matrix-token"
-MATRIX_USER_ID="@bot:example.com"
-```
+Required:
+
+- `SESSION_COOKIE_SECRET` - secret used to sign session cookies.
+- `MATRIX_AUTH_SECRET` - HMAC secret for invite signatures.
+- `MATRIX_OIDC_CLIENT_ID` - OIDC client ID (from MAS).
+- `MATRIX_OIDC_ISSUER` or the explicit endpoints below.
+- `MATRIX_OIDC_REDIRECT_URI` - callback URL (e.g. `http://localhost:8080/api/auth/callback`).
+- `MATRIX_HOMESERVER_URL` - Matrix homeserver base URL.
+- `MATRIX_ACCESS_TOKEN` - token with permissions to manage registration tokens.
+
+OIDC options:
+
+- `MATRIX_OIDC_ISSUER` - OIDC discovery URL (used if explicit endpoints are not provided).
+- `MATRIX_OIDC_AUTHORIZATION_ENDPOINT` - override discovery.
+- `MATRIX_OIDC_TOKEN_ENDPOINT` - override discovery.
+- `MATRIX_OIDC_USERINFO_ENDPOINT` - optional override.
+- `MATRIX_OIDC_CLIENT_SECRET` - optional.
+- `MATRIX_OIDC_SCOPE` - optional; default `openid profile email`.
+
+Redis (optional but recommended):
+
+- `REDIS_URL` - connection string; if set, host/port/user/pass are ignored.
+- `REDIS_HOST`, `REDIS_PORT`, `REDIS_USER`, `REDIS_PASS`
+- `REDIS_TLS` (set `true` to enable TLS)
+- `REDIS_TLS_INSECURE` (set `true` to skip TLS verification)
+
+Other:
+
+- `PORT` - backend port (default `3000`).
+- `MATRIX_ADMIN_API_BASE` - optional override for Matrix admin API base URL.
+- `MATRIX_USER_ID` - optional, used for config reporting.
+- `FRONTEND_REDIRECT_URI` - optional; default `/` after auth.
+- `NODE_ENV` - when `production`, cookies are marked `secure`.
 
 ## 🌐 Deployment
 
@@ -97,24 +107,3 @@ Build the server and run it behind any HTTP proxy. The Docker container is a con
 ```sh
 docker compose up --build
 ```
-
-
-
-| Variable | Description |
-| --- | --- |
-| `PORT` | Port that the backend server listens on (default: `3000`). |
-| `REDIS_HOST` | Redis host (optional; use with `REDIS_PORT`, `REDIS_USER`, `REDIS_PASS`). |
-| `REDIS_PORT` | Redis port (default: `6379`). |
-| `REDIS_USER` | Redis username (optional). |
-| `REDIS_PASS` | Redis password (optional). |
-| `REDIS_TLS` | Set to `true` to enable TLS when using `REDIS_HOST`. |
-| `REDIS_TLS_INSECURE` | Set to `true` to skip TLS certificate validation. |
-| `REDIS_URL` | Redis connection string for backend caching/state (optional, overrides host/port settings). |
-| `MATRIX_AUTH_SECRET` | Secret used to sign the session cookie. |
-| `OIDC_ISSUER_URL` | OIDC issuer base URL. |
-| `OIDC_CLIENT_ID` | OIDC client ID. |
-| `OIDC_CLIENT_SECRET` | OIDC client secret. |
-| `OIDC_REDIRECT_URI` | OIDC redirect URI. |
-| `MATRIX_HOMESERVER_URL` | Matrix homeserver URL. |
-| `MATRIX_ACCESS_TOKEN` | Matrix access token for the bot/user. |
-| `MATRIX_USER_ID` | Matrix user ID (e.g. `@bot:example.com`). |
