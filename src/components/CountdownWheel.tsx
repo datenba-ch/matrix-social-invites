@@ -52,14 +52,15 @@ export const CountdownWheel: React.FC<CountdownWheelProps> = ({
   // Generate notched segments (14 segments = 7 days × 2 half-days)
   const totalSegments = 14;
   const radius = 42;
-  const strokeWidth = 8;
+  const strokeWidth = 4;
   const circumference = 2 * Math.PI * radius;
   const segmentLength = circumference / totalSegments;
   const gapLength = 8; // Smaller gaps for more segments
   const arcLength = segmentLength - gapLength;
   
-  // Calculate how many segments should be filled (counting from segment 0)
-  const filledSegments = Math.ceil((1 - displayProgress) * totalSegments);
+  // Fill progress for animated ring
+  const fillFraction = Math.max(0, Math.min(1, 1 - displayProgress));
+  const fillDashOffset = circumference * (1 - fillFraction);
 
   const formattedTime = useMemo(() => {
     const timeStyle = { color: '#8da101' };
@@ -122,30 +123,20 @@ export const CountdownWheel: React.FC<CountdownWheelProps> = ({
           );
         })}
         
-        {/* Filled segments with depletion animation */}
-        {Array.from({ length: totalSegments }).map((_, index) => {
-          const isFilled = index < filledSegments;
-          const rotation = (index * 360) / totalSegments - 90;
-          return (
-          <circle
-            key={`fill-${index}`}
-            cx="50"
-            cy="50"
-            r={radius}
-            fill="none"
-            stroke={fillColor}
-              strokeWidth={strokeWidth}
-              strokeDasharray={`${arcLength} ${circumference - arcLength}`}
-              strokeDashoffset={0}
-              strokeLinecap="butt"
-              transform={`rotate(${rotation} 50 50)`}
-              style={{ 
-                opacity: isFilled ? 1 : 0,
-                transition: 'opacity 0.5s ease-out',
-              }}
-            />
-          );
-        })}
+        {/* Smooth animated fill ring */}
+        <circle
+          cx="50"
+          cy="50"
+          r={radius}
+          fill="none"
+          stroke={fillColor}
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={fillDashOffset}
+          strokeLinecap="round"
+          transform="rotate(-90 50 50)"
+          className="transition-[stroke-dashoffset] duration-1000 ease-linear"
+        />
       </svg>
       
       {/* Center text - live countdown */}

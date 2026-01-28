@@ -89,6 +89,11 @@ type MatrixProfile = {
   avatarUrl?: string;
 };
 
+type MatrixLoginSession = {
+  userId: string;
+  accessToken: string;
+};
+
 const matrixProfileBase = () => {
   const baseUrl =
     process.env.MATRIX_ADMIN_API_BASE ?? process.env.MATRIX_HOMESERVER_URL;
@@ -100,6 +105,7 @@ const matrixProfileBase = () => {
 
 const fetchMatrixProfile = async (
   matrixId: string,
+  accessToken?: string,
 ): Promise<MatrixProfile | null> => {
   const base = matrixProfileBase();
   if (!base) {
@@ -112,7 +118,15 @@ const fetchMatrixProfile = async (
       `/_matrix/client/v3/profile/${encodeURIComponent(matrixId)}`,
       base,
     );
-    response = await fetch(profileUrl.toString());
+    response = await fetch(profileUrl.toString(), {
+      headers: {
+        ...(accessToken
+          ? {
+              Authorization: `Bearer ${accessToken}`,
+            }
+          : {}),
+      },
+    });
   } catch (error) {
     console.warn('Failed to build matrix profile URL', error);
     return null;
@@ -143,6 +157,77 @@ const fetchMatrixProfile = async (
     };
   } catch (error) {
     console.warn('Failed to parse matrix profile response', error);
+    return null;
+  }
+};
+
+const fetchMatrixWhoAmI = async (accessToken: string): Promise<string | null> => {
+  const base = matrixProfileBase();
+  if (!base) {
+    return null;
+  }
+
+  try {
+    const whoamiUrl = new URL('/_matrix/client/v3/account/whoami', base);
+    const response = await fetch(whoamiUrl.toString(), {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (!response.ok) {
+      console.warn('Matrix whoami lookup failed', response.status);
+      return null;
+    }
+
+    const data = (await response.json()) as { user_id?: string };
+    return typeof data.user_id === 'string' ? data.user_id : null;
+  } catch (error) {
+    console.warn('Failed to fetch Matrix whoami', error);
+    return null;
+  }
+};
+
+const exchangeOidcTokenForMatrixSession = async (
+  oidcToken: string,
+): Promise<MatrixLoginSession | null> => {
+  const base = matrixProfileBase();
+  if (!base) {
+    return null;
+  }
+
+  try {
+    const loginUrl = new URL('/_matrix/client/v3/login', base);
+    const response = await fetch(loginUrl.toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'org.matrix.login.jwt',
+        token: oidcToken,
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn('Matrix login token exchange failed', response.status);
+      return null;
+    }
+
+    const data = (await response.json()) as {
+      user_id?: string;
+      access_token?: string;
+    };
+
+    if (typeof data.user_id !== 'string' || typeof data.access_token !== 'string') {
+      return null;
+    }
+
+    return {
+      userId: data.user_id,
+      accessToken: data.access_token,
+    };
+  } catch (error) {
+    console.warn('Failed to exchange OIDC token for Matrix session', error);
     return null;
   }
 };
@@ -318,24 +403,43 @@ export const handleCallback = async (req: Request, res: Response) => {
     const tokenResponse = await exchangeToken(body);
     const userInfo = await fetchUserInfo(tokenResponse.access_token);
 
-    const matrixId =
+    const matrixIdFromInfo =
       (userInfo?.matrix_id as string | undefined) ||
       (userInfo?.preferred_username as string | undefined) ||
       (userInfo?.sub as string | undefined) ||
       'unknown';
 
+    const oidcLoginToken =
+      tokenResponse.id_token ?? tokenResponse.access_token ?? undefined;
+
+    const matrixSession =
+      oidcLoginToken !== undefined
+        ? await exchangeOidcTokenForMatrixSession(oidcLoginToken)
+        : null;
+
+    const matrixAccessToken = matrixSession?.accessToken;
+    const whoAmIResult = matrixAccessToken
+      ? await fetchMatrixWhoAmI(matrixAccessToken)
+      : null;
+
+    const confirmedMatrixId =
+      whoAmIResult ?? matrixSession?.userId ?? matrixIdFromInfo;
+
     const fallbackDisplayName =
       (userInfo?.name as string | undefined) ||
       (userInfo?.preferred_username as string | undefined) ||
-      matrixId;
+      matrixIdFromInfo;
 
-    const profile = await fetchMatrixProfile(matrixId);
+    const profile = await fetchMatrixProfile(
+      confirmedMatrixId,
+      matrixAccessToken,
+    );
     const displayName = profile?.displayName ?? fallbackDisplayName;
 
     const user = {
-      id: (userInfo?.sub as string | undefined) ?? matrixId,
+      id: (userInfo?.sub as string | undefined) ?? confirmedMatrixId,
       displayName,
-      matrixId,
+      matrixId: confirmedMatrixId,
       ...(profile?.avatarUrl ? { avatarUrl: profile.avatarUrl } : {}),
     };
 
