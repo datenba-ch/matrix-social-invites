@@ -3,6 +3,8 @@ name: deploy
 on:
   push:
     branches: [main]
+    tags:
+      - "v*"
   pull_request:
     branches: [main]
 
@@ -49,6 +51,7 @@ jobs:
           GIT_SHA: ${{ github.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REF_NAME: ${{ github.ref }}
+          REF_NAME_SHORT: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           TAG_SHA="sha-${GIT_SHA:0:7}"
@@ -57,6 +60,10 @@ jobs:
           if [[ "${REF_NAME}" == "refs/heads/main" ]]; then
             for image in "${INTERNAL_IMAGE}" "${GHCR_IMAGE}"; do
               TAGS+=("-t" "${image}:latest" "-t" "${image}:${TAG_SHA}")
+            done
+          elif [[ "${REF_NAME}" == refs/tags/* ]]; then
+            for image in "${INTERNAL_IMAGE}" "${GHCR_IMAGE}"; do
+              TAGS+=("-t" "${image}:${REF_NAME_SHORT}" "-t" "${image}:${TAG_SHA}")
             done
           else
             if [[ -z "${PR_NUMBER:-}" ]]; then
@@ -79,7 +86,7 @@ jobs:
     name: Deploy to Scaleway
     runs-on: ubuntu-latest
     needs: build-push
-    if: ${{ github.ref == 'refs/heads/main' }}
+    if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
     env:
       SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
       SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
