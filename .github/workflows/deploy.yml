@@ -29,10 +29,13 @@ jobs:
 
       - name: Log in to Scaleway Container Registry
         uses: docker/login-action@v3
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.SCW_ACCESS_KEY }}
-          password: ${{ secrets.SCW_SECRET_KEY }}
+          username: ${{ env.SCW_ACCESS_KEY }}
+          password: ${{ env.SCW_SECRET_KEY }}
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
