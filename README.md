@@ -4,12 +4,12 @@
 
 ![datenbach_matrix_social_invites](assets/header.png)
 
-[![GitHub release](https://img.shields.io/github/v/release/datenba-ch/matrix-social-invites?color=blue&label=release)]()
-[![GitHub license](https://img.shields.io/github/license/datenba-ch/matrix-social-invites?color=green)]()
-[![GitHub issues](https://img.shields.io/github/issues/datenba-ch/matrix-social-invites?color=red)]()
-[![GitHub stars](https://img.shields.io/github/stars/datenba-ch/matrix-social-invites?color=yellow)]()
-[![GitHub forks](https://img.shields.io/github/forks/datenba-ch/matrix-social-invites?color=orange)]()
-[![GitHub watchers](https://img.shields.io/github/watchers/datenba-ch/matrix-social-invites?color=blue)]()
+[![GitHub release](https://img.shields.io/github/v/release/datenba-ch/matrix-social-invites?color=orange&label=release)](https://github.com/datenba-ch/matrix-social-invites/releases)
+[![GitHub license](https://img.shields.io/github/license/datenba-ch/matrix-social-invites?color=green)](LICENSE)
+[![GitHub issues](https://img.shields.io/github/issues/datenba-ch/matrix-social-invites?color=orange)](https://github.com/datenba-ch/matrix-social-invites/issues)
+[![GitHub stars](https://img.shields.io/github/stars/datenba-ch/matrix-social-invites?color=green)](https://github.com/datenba-ch/matrix-social-invites/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/datenba-ch/matrix-social-invites?color=orange)](https://github.com/datenba-ch/matrix-social-invites/network/members)
+[![GitHub watchers](https://img.shields.io/github/watchers/datenba-ch/matrix-social-invites?color=green)](https://github.com/datenba-ch/matrix-social-invites/watchers)
 
 Organically grow your Matrix community by sharing registration tokens with your friends and family.
 
