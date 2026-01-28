@@ -1,9 +1,8 @@
 <div align="center">
 
-<h2> Datenbach Social Invites </h2>
+<h2> Datenbach Matrix Social Invites </h2>
 
-![retro_music](assets/header.png)
-
+![datenbach_matrix_social_invites](assets/header.png)
 
 [![GitHub release](https://img.shields.io/github/v/release/datenba-ch/social-invites?color=blue&label=release)]()
 [![GitHub license](https://img.shields.io/github/license/datenba-ch/social-invites?color=green)]()
@@ -17,11 +16,12 @@ Organically grow your Matrix community by sharing registration tokens with your 
 <img src="assets/code.png" alt="code" style="width: 250px;" >
 </div>
 
-## 🗺️ map 
-- [<code>🗺️ About</code>](#-about)
+## 🗺️ map
+
+- [<code>🗺️ About</code>](#%EF%B8%8F-about)
 - [<code>📦 Installation</code>](#-installation)
 - [<code>🎮 Development</code>](#-development)
-- [<code>🚦️ Environment variables</code>](#-environment-variables)
+- [<code>🚦️ Environment</code>](#%EF%B8%8F-environment)
 - [<code>🌐 Deployment</code>](#-deployment)
 
 ## 🗺️ About
@@ -35,8 +35,6 @@ Datenbach Social Invites lets a Matrix user generate and manage a shared registr
 Currently these tokens are generated with a invalidation timeout of 7 days and will automatically refresh. This allows our users to share their weekly invite code with their friends and family easily.
 
 ## 📦 Installation
-
-$${\color{#AC3097}Install \space \color{#56565E}Retro}$$ 
 
 The easiest way to install is to use Docker Compose.
 
@@ -62,7 +60,7 @@ cp .env.example .env.development
 docker compose -f docker-compose.dev.yml up --build
 ```
 
-## 🚦️ Environment variables
+## 🚦️ Environment
 
 Most deployments can copy `.env.example` and edit values. These are the variables the server actually reads:
 
