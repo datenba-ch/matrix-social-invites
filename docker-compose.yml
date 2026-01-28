@@ -8,21 +8,10 @@ services:
       && (node dist-server/index.js &)
       && npm run dev"
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       PORT: 8081
-      SESSION_COOKIE_SECRET: dev-session-secret-change-me
-      REDIS_URL: redis://redis:6379
-      CHOKIDAR_USEPOLLING: "true"
-
-      MATRIX_AUTH_SECRET: replace-with-strong-secret
-      MATRIX_OIDC_CLIENT_ID: REDACTED
-      MATRIX_OIDC_SCOPE: openid email
-      MATRIX_OIDC_CLIENT_SECRET: REDACTED
-      MATRIX_OIDC_ISSUER: https://matrix.example.com/auth/.well-known/openid-configuration
-      MATRIX_OIDC_REDIRECT_URI: http://localhost:8080/api/auth/callback
-      MATRIX_HOMESERVER_URL: https://matrix.example.com
-      MATRIX_ACCESS_TOKEN: REDACTED
-      MATRIX_ADMIN_API_BASE: https://matrix.example.com/auth
+    env_file:
+      - .env
     ports:
       - "8080:8080"
       - "8081:8081"
