@@ -77,17 +77,13 @@ jobs:
     needs: build-push
     if: ${{ github.ref == 'refs/heads/main' }}
     steps:
-      - name: Install Scaleway CLI
-        run: |
-          set -euo pipefail
-          curl -fsSL https://github.com/scaleway/scaleway-cli/releases/latest/download/scw-linux-amd64 -o /tmp/scw
-          chmod +x /tmp/scw
-          sudo mv /tmp/scw /usr/local/bin/scw
-
-      - name: Deploy container
+      - name: Configure Scaleway CLI
+        uses: scaleway/action-scw@v0
         env:
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
           SCW_DEFAULT_REGION: ${{ secrets.SCW_DEFAULT_REGION }}
+
+      - name: Deploy container
         run: scw container container deploy "${SCW_CONTAINER_ID}"
