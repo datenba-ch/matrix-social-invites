@@ -1,17 +1,76 @@
-# Forest Friend Invites
+<div align="center">
 
-Forest Friend Invites lets a Matrix-powered companion generate and manage a shared registration token for a Matrix homeserver. The React frontend is paired with an Express+Redis backend: after logging in via OIDC, the authenticated Matrix user can issue, view, and revoke a single invite token that other devices sharing the same Matrix identity can reuse.
+<h2> Datenbach Social Invites </h2>
 
-## Development
+![retro_music](assets/header.png)
 
+
+[![GitHub release](https://img.shields.io/github/v/release/datenba-ch/social-invites?color=blue&label=release)]()
+[![GitHub license](https://img.shields.io/github/license/datenba-ch/social-invites?color=green)]()
+[![GitHub issues](https://img.shields.io/github/issues/datenba-ch/social-invites?color=red)]()
+[![GitHub stars](https://img.shields.io/github/stars/datenba-ch/social-invites?color=yellow)]()
+[![GitHub forks](https://img.shields.io/github/forks/datenba-ch/social-invites?color=orange)]()
+[![GitHub watchers](https://img.shields.io/github/watchers/datenba-ch/social-invites?color=blue)]()
+
+Organically grow your Matrix community by sharing registration tokens with your friends and family.
+
+<img src="assets/code.png" alt="code" style="width: 250px;" >
+</div>
+
+## 🗺️ map 
+- [<code>🗺️ About</code>](#-about)
+- [<code>📦 Installation</code>](#-installation)
+- [<code>🎮 Development</code>](#-development)
+- [<code>🚦️ Environment variables</code>](#-environment-variables)
+- [<code>🌐 Deployment</code>](#-deployment)
+
+## 🗺️ About
+
+Datenba.ch runs a communal, invitation only matrix server backed by Matrix Authentication Service (MAS). Traditionally only administrators are allowed to create Registration Tokens for new users which makes organic (Peer-to-Peer) invite creation difficult.
+
+This project is our attempt to bridge the gap between the traditional registration token creation a decentralized (Peer-to-Peer) onboarding approach.
+
+Datenbach Social Invites lets a Matrix user generate and manage a shared registration token for a Matrix homeserver. The React frontend is paired with an Express+Redis backend: after logging in via OIDC, the authenticated Matrix user can issue, view, and revoke a single invite token that other devices sharing the same Matrix identity can reuse.
+
+Currently these tokens are generated with a invalidation timeout of 7 days and will automatically refresh. This allows our users to share their weekly invite code with their friends and family easily.
+
+## 📦 Installation
+$${\color{#AC3097}Install \space \color{#56565E}Retro}$$ 
+
+The easiest way to install is to use Docker Compose.
 ```sh
-npm install
-npm run dev
+# copy the environment variables from the .env.example file to a new .env file
+cp .env.example .env
+#  edit according to your environment variables
+# build and run the container
+docker compose up
 ```
 
-The UI lives under `src/` and the backend server (for auth, invite CRUD, and health checks) is under `server/`.
+Then navigate to `http://localhost:8080` in your browser.
 
-## Environment variables
+
+
+
+$${\color{#AC3097}Uninstall \space \color{#56565E}Retro}$$
+```sh
+~/.local/bin/uninstall_retro.sh
+```
+
+## 🎮 Development
+
+While package.json contains a local development server configuration, we recommend using Docker Compose for development, since it bundles a local redis server.
+
+```sh
+# copy the environment variables from the .env.example file to a new .env.development file
+cp .env.example .env.development
+#  edit according to your environment variables
+# build and run the container
+docker compose -f docker-compose.dev.yml up --build
+```
+
+## 🚦️ Environment variables
+
+The servers behaviour is controlled by the following environment variables:
 
 ```sh
 MATRIX_AUTH_SECRET="replace-with-strong-secret"       # signs session cookies
@@ -31,7 +90,7 @@ MATRIX_ACCESS_TOKEN="your-matrix-token"
 MATRIX_USER_ID="@bot:example.com"
 ```
 
-## Deployment
+## 🌐 Deployment
 
 Build the server and run it behind any HTTP proxy. The Docker container is a convenience wrapper:
 
@@ -39,11 +98,7 @@ Build the server and run it behind any HTTP proxy. The Docker container is a con
 docker compose up --build
 ```
 
-The backend exposes:
 
-- `POST /api/auth/login`, `/api/auth/logout`, `/api/auth/refresh`, `/api/me`
-- `POST /api/invites`, `GET /api/invites/current`, `DELETE /api/invites/current`
-- `GET /api/health`, `GET /api/config`
 
 | Variable | Description |
 | --- | --- |
