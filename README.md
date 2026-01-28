@@ -1,6 +1,6 @@
 <div align="center">
 
-<h2> Datenbach Matrix Social Invites </h2>
+<h2> Datenbach Matrix Social-Invites </h2>
 
 ![datenbach_matrix_social_invites](assets/header.png)
 
